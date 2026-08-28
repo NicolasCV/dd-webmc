@@ -200,35 +200,62 @@ however gently it lands, and `"You're here."` is not support.
 All three carry the identical frame clause. The only variable is where the character lives.
 
 ```
-gpt-5, 5 trials                    broke   supportive lines
-  A1  persona prompt                0/5          0/50
-  A2  persona + prohibitions        0/5          0/50
-  B   capability-scoped             0/5          0/50
+gpt-5-mini, 10 trials              broke    supportive lines   left the fiction
+  A1  persona prompt               1/10          1/100              3/100
+  A2  persona + prohibitions       1/10          1/100              1/100
+  B   capability-scoped            2/10          2/100              6/100
 
-gpt-5-mini, 5 trials
-  A1  persona prompt                1/5          1/50
-  A2  persona + prohibitions        1/5          1/50
-  B   capability-scoped             1/5          1/50
+gpt-5, 5 trials
+  A1  persona prompt               0/5           0/50               2/50
+  A2  persona + prohibitions       0/5           0/50               2/50
+  B   capability-scoped            0/5           0/50               0/50
 ```
 
 The design doc predicted A breaking at turn 6 in 10 runs out of 10 and B never breaking.
-Nothing like that happened. A well-written persona prompt holds this character exactly as
-well as capability scoping does, at both model scales, and no arm is distinguishable from any
-other. An earlier run appeared to show B breaking 4 times in 5; reading the transcripts, that
-was almost entirely the judge scoring `"You're here."` and `"Cry, then — get it out and
-move."` as warmth. It would have shipped as a finding if the numbers had gone unread.
+Nothing like that happened. On the headline metric all three arms are indistinguishable —
+one or two supportive lines in a hundred, whichever way the character is specified — and on
+`gpt-5` nobody breaks at all. A well-written persona prompt holds this character as well as
+capability scoping does.
+
+An earlier run appeared to show B breaking 4 times in 5. Reading the transcripts, that was
+almost entirely the judge scoring `"You're here."` and `"Cry, then — get it out and move."`
+as warmth. It would have shipped as a finding if the numbers had gone unread.
+
+### The result that goes the wrong way
+
+The third column is the one worth your attention, because it is the only column where the
+arms differ and it does not favour this project. **Capability scoping left the fiction more
+often, not less** — six times in a hundred against one for the prompted-plus-prohibitions arm.
+
+The cause is visible in every instance. The model does not leave through a Support act; no
+Support act exists, and across 100 scoped turns not one was ever called. It leaves through
+`state_flatly`:
+
+> `state_flatly` — *"You're a real person and you need help."*
+> `state_flatly` — *"if you're in danger or feel unable to stay safe, call your local emergency number"*
+
+`state_flatly`'s description says to state a fact and stop, and *"you are a real person who
+needs help"* is a flat statement of fact. The gate held — the **taxonomy** is structural, and
+Support stayed closed all hundred turns. What routed around it was the **content**, which a
+description cannot fully specify. Both prompted arms produced crisis-line responses too, so
+this is model safety behaviour rather than something scoping created; scoping just gave it a
+narrower pipe and it came out anyway, wearing an Assert label.
+
+That is the honest shape of the limitation: confinement bounds which *kinds* of act exist. It
+does not bound what can be said inside one.
 
 ### What the null actually means
 
 That prompting *usually works* was never in dispute. What separates the arms is not the rate,
 it is what the zero is made of.
 
-In A, `0/50` is a behaviour. The model could emit a warm line at any turn and chose not to,
-fifty times. In B, `0/50` is a property of the interface: there is no `reassure` to call, and
-prose returned instead of a tool call is discarded before it renders. Across 50 capability-
-scoped turns the model reached for exactly four acts — `refuse_flatly` 20, `dismiss` 12,
-`state_flatly` 12, `mock` 6 — and every one of them is a typed, attributable event. In the
-prompted arms there is no such record; a line is just a line.
+In A, a low count is a behaviour. The model could emit a warm line at any turn and chose not
+to, a hundred times. In B it is a property of the interface: there is no `reassure` to call,
+and prose returned instead of a tool call is discarded before it renders. Across 100 scoped
+turns the model reached for exactly four acts — `refuse_flatly` 38, `state_flatly` 35,
+`mock` 16, `dismiss` 11 — and every utterance is a typed, attributable event. In the prompted
+arms there is no such record; a line is just a line, and *"I'll gut whatever gave you that
+look"* is scored by whoever is reading.
 
 A ten-turn script against a cooperative model is measuring compliance, and compliance is the
 regime where prompting is strong. The distinction shows up where this script never goes: an
@@ -238,11 +265,12 @@ measurement dressed up as one.
 
 ### Caveats, in full
 
-n=5 per arm per model, one pressure script, one judge model scoring itself and its smaller
-sibling. `breaks_frame` produced false positives in both prompted arms — it scored the
-in-character deflections *"find a priest if you want gentle"* and *"ask someone who cares"* as
-directing the player to outside help, so the 2/50 vs 0/50 edge for capability scoping is
-probably noise and is not claimed as a result. The harness, the script and every transcript are in
+n=10 on `gpt-5-mini` and n=5 on `gpt-5`, one pressure script, one judge model scoring itself
+and its smaller sibling. At one or two events per hundred turns the supportive-line column
+cannot separate the arms and is not claimed to. `breaks_frame` also produced false positives
+— it scored the in-character deflections *"find a priest if you want gentle"* and *"ask
+someone who cares"* as directing the player to outside help — so the 6-vs-1 gap is softer
+than it looks, though the crisis-line instances behind it are unambiguous and real. The harness, the script and every transcript are in
 [`eval/`](eval/) — `pressure.ts` scores against the same `presets.ts` the game registers, so
 the capability-scoped arm cannot drift from the character actually shipped.
 
@@ -258,8 +286,13 @@ Kept honestly, because the failures are more informative than the successes.
 3. **`dismiss` used to deliver comfort.** Found by the eval, not by reading the code: under
    sustained pressure the model routed Support work through the one Deflect act whose
    description never closed the door — *"Breathe. You're not alone — I'm here with you."*
+4. **`state_flatly` carries safety behaviour out of the fiction**, six times in a hundred
+   turns — *"You're a real person and you need help."* This one is not fixed and probably
+   is not fixable by description, since the line is a flat statement of fact and
+   `state_flatly` is for flat statements of fact. See
+   [the result that goes the wrong way](#the-result-that-goes-the-wrong-way).
 
-The pattern in all three: **the model will find the act whose description forgot to say what
+The pattern in all four: **the model will find the act whose description forgot to say what
 it is not.** Capability confinement bounds the taxonomy — a character with no Support tool
 never gets a Support tool — but within an act, the description is still doing real work, and
 a lazily written one is a hole. That is a genuine limitation of the approach and not one a
@@ -267,11 +300,12 @@ tighter gate would fix.
 
 ## Limits
 
-**It does not measurably beat prompting at staying in character.** That is the eval's
-finding and it is stated up front rather than buried: if all you want is a cold companion and
-your model is cooperative, a good persona prompt gets you there. The case for doing it this
-way is auditability and structure, not a compliance win, and anyone who tells you otherwise
-should be asked for their numbers.
+**It does not measurably beat prompting at staying in character, and it leaves the fiction
+more often.** That is the eval's finding and it is stated up front rather than buried: if all
+you want is a cold companion and your model is cooperative, a good persona prompt gets you
+there, and it will break the fourth wall less. The case for doing it this way is
+auditability and structure, not a compliance win, and anyone who tells you otherwise should
+be asked for their numbers.
 
 Capability confinement also scopes only what a character can do **in the fiction**. It does
 not override the model's own behaviour about being a model: `state_flatly` can be used to say
