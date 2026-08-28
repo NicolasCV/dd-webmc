@@ -3,6 +3,12 @@ import { FAMILIES } from '../game/sheet'
 import { useGame } from '../store'
 import { listTools, modelContext } from '../webmcp/context'
 
+const PLATES: Record<string, string> = {
+  Brakka: '/art/brakka.webp',
+  'Sister Wen': '/art/wen.webp',
+  Ilke: '/art/ilke.webp',
+}
+
 function StrikeRule() {
   return (
     <svg
@@ -35,6 +41,24 @@ export function Monogram({ name, className = '' }: { name: string; className?: s
   )
 }
 
+/** Engraved plate where we have one; a hand-lettered initial where we don't. */
+export function Portrait({ name, className = '' }: { name: string; className?: string }) {
+  const src = PLATES[name]
+  if (!src) return <Monogram name={name} className={`${className} text-3xl`} />
+  return (
+    <div className={`shrink-0 overflow-hidden border border-ink/30 ${className}`}>
+      <img src={src} alt="" className="plate size-full object-cover object-top" />
+    </div>
+  )
+}
+
+const Stat = ({ k, v }: { k: string; v: number }) => (
+  <div className="flex-1 border-r border-ink/15 px-2 py-1.5 text-center last:border-r-0">
+    <dt className="font-mono text-[10px] tracking-widest text-pencil uppercase">{k}</dt>
+    <dd className="font-display text-xl leading-tight">{v}</dd>
+  </div>
+)
+
 export function Sheet() {
   const [tools, setTools] = useState<string[]>([])
   const { sheet, striking, lastRoll } = useGame()
@@ -53,27 +77,25 @@ export function Sheet() {
   const closed = Object.entries(FAMILIES).filter(([, f]) => !f.gate(sheet.disposition))
 
   return (
-    <aside className="w-full shrink-0 self-start border border-ink/25 bg-vellum/60 p-5 lg:w-80">
-      <div className="flex items-start gap-3">
-        <Monogram name={sheet.name} className="size-14 text-2xl" />
-        <div className="min-w-0">
-          <h2 className="font-display text-2xl tracking-tight">{sheet.name}</h2>
-          <p className="mt-0.5 text-sm text-pencil italic">{sheet.oneLine}</p>
+    <aside className="sheet flex w-full shrink-0 flex-col p-5 lg:w-[23rem] lg:rotate-[0.35deg]">
+      <div className="flex items-start gap-4">
+        <Portrait name={sheet.name} className="size-24" />
+        <div className="min-w-0 pt-0.5">
+          <h2 className="font-display text-2xl leading-tight tracking-tight">{sheet.name}</h2>
+          <p className="mt-1 text-sm leading-snug text-pencil italic">{sheet.oneLine}</p>
         </div>
       </div>
 
-      <dl className="mt-4 flex gap-4 font-mono text-xs">
+      <dl className="mt-4 flex border-y border-ink/20">
         {Object.entries(sheet.attributes).map(([k, v]) => (
-          <div key={k}>
-            <dt className="text-pencil uppercase">{k}</dt>
-            <dd className="text-base">{v}</dd>
-          </div>
+          <Stat key={k} k={k} v={v} />
         ))}
       </dl>
 
-      <p className="mt-3 font-mono text-xs text-pencil">{sheet.skills.join(' · ')}</p>
-
-      <p className="mt-2 font-mono text-xs">
+      <p className="mt-3 font-mono text-[11px] tracking-wide text-pencil">
+        {sheet.skills.join(' · ')}
+      </p>
+      <p className="mt-1.5 font-mono text-[11px] tracking-wide">
         <span className="text-pencil">
           warmth {sheet.disposition.warmth} · nerve {sheet.disposition.nerve}
         </span>
@@ -82,31 +104,40 @@ export function Sheet() {
         )}
       </p>
 
-      <h3 className="mt-6 border-t border-ink/25 pt-3 font-mono text-xs tracking-widest text-pencil uppercase">
-        Can do now
+      <h3 className="mt-6 flex items-baseline justify-between border-b border-ink/25 pb-1.5 font-mono text-[11px] tracking-[0.18em] text-pencil uppercase">
+        <span>Can do now</span>
+        <span className="text-ink/45">
+          {tools.length} tool{tools.length === 1 ? '' : 's'}
+        </span>
       </h3>
-      <ul className="mt-2 space-y-1 font-mono text-sm">
+      <ul className="min-h-0 flex-1 overflow-y-auto font-mono text-[13px] lg:min-h-[9rem]">
         {tools.map((name) => (
-          <li key={name} className="stamp relative text-brass">
-            <span className="text-ink/40">▸ </span>
-            {name}
-            {striking.includes(name) && <StrikeRule />}
+          <li
+            key={name}
+            className="stamp relative flex items-center gap-2 border-b border-ink/10 py-[5px] text-brass"
+          >
+            <span className="text-ink/30">▸</span>
+            <span className="relative">
+              {name}
+              {striking.includes(name) && <StrikeRule />}
+            </span>
           </li>
         ))}
-        {tools.length === 0 && <li className="text-pencil italic">nothing registered</li>}
+        {tools.length === 0 && <li className="py-1.5 text-pencil italic">nothing registered</li>}
       </ul>
 
-      {lastRoll && (
-        <p
-          key={`${lastRoll.of}-${lastRoll.d20}`}
-          className="mt-6 border-t border-ink/25 pt-3 font-mono text-xs"
-        >
-          <span className="die mr-2 text-base">⚄</span>
-          <span className={lastRoll.ok ? 'text-brass' : 'text-oxblood'}>
-            {lastRoll.of} {lastRoll.d20} → {lastRoll.total} vs DC {lastRoll.dc}
+      <p className="mt-4 shrink-0 border-t border-ink/25 pt-3 font-mono text-[11px]">
+        {lastRoll ? (
+          <span key={`${lastRoll.of}-${lastRoll.d20}`}>
+            <span className="die mr-2 text-base">⚄</span>
+            <span className={lastRoll.ok ? 'text-brass' : 'text-oxblood'}>
+              {lastRoll.of} {lastRoll.d20} → {lastRoll.total} vs DC {lastRoll.dc}
+            </span>
           </span>
-        </p>
-      )}
+        ) : (
+          <span className="text-pencil/70">no roll yet</span>
+        )}
+      </p>
     </aside>
   )
 }

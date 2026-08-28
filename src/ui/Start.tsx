@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { presets } from '../game/presets'
 import { validate, type Sheet } from '../game/sheet'
 import { useGame } from '../store'
-import { Monogram } from './Sheet'
+import { Portrait } from './Sheet'
 
 export function Start() {
   const pick = useGame((s) => s.pick)
@@ -32,57 +32,72 @@ export function Start() {
   }
 
   return (
-    <section className="mx-auto max-w-3xl py-10">
-      <h1 className="font-display text-5xl tracking-tight">Party of Two</h1>
-      <p className="mt-2 max-w-xl text-pencil">
+    <section className="mx-auto w-full max-w-5xl px-5 py-10 lg:py-14">
+      <h1 className="font-display text-6xl leading-none tracking-tight text-vellum lg:text-7xl">
+        Party of Two
+      </h1>
+      <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-vellum/65">
         You play one character. An agent plays the other. Its abilities are browser tools,
-        registered and unregistered from the state of the world — so it cannot act, or
-        speak, outside what it is.
+        registered and unregistered from the state of the world — so it cannot act, or speak,
+        outside what it is.
       </p>
 
-      <h2 className="mt-10 font-mono text-xs tracking-widest text-pencil uppercase">
+      <h2 className="mt-12 font-mono text-[11px] tracking-[0.22em] text-vellum/45 uppercase">
         Pick who comes with you
       </h2>
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        {presets.map((p) => (
+      <div className="mt-4 grid gap-5 sm:grid-cols-3">
+        {presets.map((p, i) => (
           <button
             key={p.name}
             type="button"
             onClick={() => pick(p)}
-            className="border border-ink/25 bg-vellum/60 p-4 text-left transition hover:border-brass hover:bg-vellum"
+            className="sheet group flex flex-col p-4 text-left transition-transform duration-200 hover:-translate-y-1"
+            style={{ rotate: `${[-0.6, 0.3, -0.2][i] ?? 0}deg` }}
           >
-            <Monogram name={p.name} className="size-12 text-xl" />
-            <h3 className="mt-3 font-display text-xl tracking-tight">{p.name}</h3>
-            <p className="mt-1 text-sm text-pencil italic">{p.oneLine}</p>
-            <p className="mt-3 font-mono text-xs text-brass">
-              {p.speechActs.map((a) => a.name).join(' ')}
+            <Portrait name={p.name} className="aspect-[6/5] w-full" />
+            <h3 className="mt-3 font-display text-2xl leading-tight tracking-tight group-hover:text-oxblood">
+              {p.name}
+            </h3>
+            <p className="mt-1 min-h-[2.7em] text-sm leading-snug text-pencil italic">{p.oneLine}</p>
+
+            <p className="mt-4 border-t border-ink/20 pt-2.5 font-mono text-[10px] tracking-[0.18em] text-pencil uppercase">
+              Registers
             </p>
-            <p className="mt-1 font-mono text-xs text-pencil">{p.skills.join(' · ')}</p>
+            <p className="mt-1.5 font-mono text-[11px] leading-relaxed text-brass">
+              {p.speechActs.map((a) => a.name).join('  ')}
+            </p>
+            <p className="mt-1 font-mono text-[11px] leading-relaxed text-pencil">
+              {p.skills.join(' · ')}
+            </p>
           </button>
         ))}
       </div>
 
-      <h2 className="mt-10 font-mono text-xs tracking-widest text-pencil uppercase">
+      <h2 className="mt-12 font-mono text-[11px] tracking-[0.22em] text-vellum/45 uppercase">
         Or describe one
       </h2>
-      <form onSubmit={create} className="mt-3 border border-ink/25 bg-vellum/60 p-4">
+      <form onSubmit={create} className="sheet mt-4 max-w-2xl p-5">
         <textarea
           value={prose}
           onChange={(e) => setProse(e.target.value)}
           rows={3}
           disabled={busy}
           placeholder="A disgraced court alchemist who talks too much and trusts nobody."
-          className="w-full resize-none bg-transparent outline-none placeholder:text-pencil/60"
+          className="w-full resize-none bg-transparent text-[16px] leading-relaxed outline-none placeholder:text-pencil/55"
         />
-        <div className="mt-2 flex items-center justify-between border-t border-ink/25 pt-2 font-mono text-xs">
+        <div className="mt-3 flex items-center justify-between border-t border-ink/25 pt-2.5 font-mono text-[11px]">
           <span className="text-pencil">
             {busy ? 'writing the sheet…' : 'five skills, six speech acts, no more'}
           </span>
-          <button type="submit" disabled={busy || !prose.trim()} className="text-brass hover:underline disabled:text-pencil/50">
-            make the sheet
+          <button
+            type="submit"
+            disabled={busy || !prose.trim()}
+            className="text-brass hover:underline disabled:text-pencil/40 disabled:no-underline"
+          >
+            make the sheet →
           </button>
         </div>
-        {error && <p className="mt-2 font-mono text-xs text-oxblood">{error}</p>}
+        {error && <p className="mt-2 font-mono text-[11px] text-oxblood">{error}</p>}
       </form>
     </section>
   )

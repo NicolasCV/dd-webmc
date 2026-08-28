@@ -13,21 +13,22 @@ export default function App() {
   useEffect(startRegistry, [])
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-6 lg:flex-row">
+    <div className="flex min-h-screen flex-col lg:h-screen">
       {!hasWebMcp && (
-        <div className="fixed inset-x-0 top-0 z-10 bg-brass px-4 py-2 text-center font-mono text-xs text-vellum">
-          no document.modelContext here — the game is running on a local registry. For the
-          real thing, open in Chrome 149+ with chrome://flags/#enable-webmcp-testing
-        </div>
+        <p className="shrink-0 bg-ink/70 px-4 py-1.5 text-center font-mono text-[11px] text-vellum/70 backdrop-blur">
+          no <code className="text-brass">document.modelContext</code> here — running on a local
+          registry. For the real thing, Chrome 149+ with{' '}
+          <code className="text-brass">chrome://flags/#enable-webmcp-testing</code>
+        </p>
       )}
       {started ? (
-        <>
+        <main className="mx-auto flex w-full max-w-[1500px] min-h-0 flex-1 flex-col gap-5 p-4 lg:flex-row lg:gap-8 lg:p-10">
           <Chat />
           <Sheet />
-        </>
+        </main>
       ) : (
         <Start />
       )}
-    </main>
+    </div>
   )
 }
