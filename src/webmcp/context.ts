@@ -34,7 +34,7 @@ export const listTools = (): Promise<RegisteredTool[]> => modelContext().getTool
 export async function callTool(
   tool: RegisteredTool,
   args: unknown,
-  local: WebMcpTool[],
+  defs: WebMcpTool[],
   signal?: AbortSignal,
 ): Promise<string> {
   const mc = modelContext()
@@ -42,7 +42,7 @@ export async function callTool(
     const out = await mc.executeTool(tool, JSON.stringify(args ?? {}), { signal })
     if (out !== null) return out
   }
-  const fallback = local.find((t) => t.name === tool.name)
+  const fallback = defs.find((t) => t.name === tool.name)
   if (!fallback) throw new Error(`no local tool named ${tool.name}`)
   return String(await fallback.execute(args as Record<string, unknown>))
 }
@@ -82,15 +82,15 @@ class LocalContext extends EventTarget {
   }
 
   async executeTool(tool: { name: string }, inputArguments: string) {
-    const local = this.tools.get(tool.name)
-    if (!local) return null
+    const def = this.tools.get(tool.name)
+    if (!def) return null
     let args: unknown = {}
     try {
       args = JSON.parse(inputArguments || '{}')
     } catch {
       /* malformed args reach the tool as {} */
     }
-    return String(await local.execute(args as Record<string, unknown>))
+    return String(await def.execute(args as Record<string, unknown>))
   }
 }
 
