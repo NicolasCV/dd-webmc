@@ -1,3 +1,4 @@
+import { speak } from '../audio'
 import { useGame } from '../store'
 import type { WebMcpTool } from '../webmcp/context'
 import type { Skill } from './world'
@@ -100,8 +101,9 @@ export const speechTools = (sheet: Sheet): WebMcpTool[] =>
       inputSchema: textSchema,
       annotations: { readOnlyHint: false },
       execute: (input) => {
-        // Terse by design: prose returned here is what the model paraphrases warmly.
-        useGame.getState().say('companion', String((input as { text?: unknown }).text ?? ''), name)
-        return 'ok'
+        const text = String((input as { text?: unknown }).text ?? '')
+        useGame.getState().say('companion', text, name)
+        speak(text, sheet.voice.ttsVoiceId)
+        return 'ok' // terse by design: prose here is what the model paraphrases warmly
       },
     }))

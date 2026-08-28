@@ -14,8 +14,23 @@ const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   g.setRoll({ ...r, of: c.id })
   g.say('world', line)
   const flag = r.ok ? c.sets : c.failSets
-  if (flag) g.setFlag(flag)
+  if (flag && !g.flags.includes(flag)) {
+    g.setFlag(flag)
+    if (flag === 'noise') wakeSomething()
+  }
   return line
+}
+
+// Failure has to be eventful or the dice are decoration. One shot, fired once, well
+// inside the turn budget -- the kill switch covers the rest.
+function wakeSomething() {
+  setTimeout(async () => {
+    if (useGame.getState().halted) return
+    const heard = 'Two rooms down, something that had been still stops being still.'
+    useGame.getState().say('world', heard)
+    const { agentTurn } = await import('../agent/turn')
+    void agentTurn(`${heard} You both heard it.`)
+  }, 2500)
 }
 
 /** Untrained, and it shows. Exists so no room is ever sealed by the companion's sheet. */
@@ -30,7 +45,55 @@ export const examineProp = (p: Prop) => {
   const g = useGame.getState()
   g.say('world', p.onExamine, `examine_${p.id}`)
   if (p.reveals) g.setFlag(p.reveals)
+  g.setFlag(seen(p))
   return p.onExamine
+}
+
+const seen = (p: Prop) => `seen_${p.id}`
+
+/**
+ * Blocks until the world does something worth noticing, so an external agent has
+ * somewhere to put its attention between acts. Never blocks indefinitely -- external
+ * agents abandon hanging tools, and a soft return invites another call.
+ */
+const WAIT_MS = 20_000
+
+let ownTurn = false
+export const setOwnTurn = (v: boolean) => {
+  ownTurn = v
+}
+
+const nextEvent = () =>
+  new Promise<string | null>((resolve) => {
+    const from = useGame.getState().bubbles.length
+    let done: () => void
+    const timer = setTimeout(() => {
+      done()
+      resolve(null)
+    }, WAIT_MS)
+    const unsub = useGame.subscribe((s) => {
+      const b = s.bubbles[s.bubbles.length - 1]
+      if (s.bubbles.length > from && b && b.who !== 'companion') {
+        done()
+        resolve(`${b.act ? `${b.act}: ` : ''}${b.text}`)
+      }
+    })
+    done = () => {
+      clearTimeout(timer)
+      unsub()
+    }
+  })
+
+const waitTool: WebMcpTool = {
+  name: 'wait_for_moment',
+  description:
+    "Wait until something happens that you'd notice. Returns what you perceive. " +
+    "Call this when you've finished acting and want to see what unfolds.",
+  inputSchema: empty,
+  annotations: { readOnlyHint: true },
+  // In our own panel the player's next line is already the trigger, so waiting here
+  // would just stall the turn. External agents get the real blocking behaviour.
+  execute: async () => (ownTurn ? 'A quiet moment. Nothing yet.' : ((await nextEvent()) ?? 'A quiet moment. Nothing yet. Call again to keep waiting.')),
 }
 
 export const go = (to: string) => {
@@ -64,6 +127,10 @@ const moveTool = (to: string): WebMcpTool => ({
   execute: () => go(to),
 })
 
+/** Looking twice at the same thing is not a capability, and the room stays under cap. */
+export const unseenProps = (room: Room, flags: string[]) =>
+  room.props.slice(0, 3).filter((p) => !flags.includes(seen(p)))
+
 export const openExits = (room: Room, flags: string[]) =>
   room.exits.filter((e) => !e.needs || flags.includes(e.needs))
 
@@ -77,7 +144,8 @@ export function computeTools(sheet: Sheet | null, roomId: string, flags: string[
     ...(room.challenges ?? [])
       .filter((c) => has(c.skill) && !(c.gone && flags.includes(c.gone)))
       .map(challengeTool(sheet)),
-    ...room.props.slice(0, 3).filter((p) => !p.requires || has(p.requires)).map(examineTool),
+    ...unseenProps(room, flags).filter((p) => !p.requires || has(p.requires)).map(examineTool),
     ...openExits(room, flags).map((e) => moveTool(e.to)),
+    waitTool,
   ]
 }

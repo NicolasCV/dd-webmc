@@ -15,6 +15,7 @@ export const TURN_BUDGET = 40
 
 type State = {
   sheet: Sheet | null
+  muted: boolean
   bubbles: Bubble[]
   roomId: string
   flags: string[]
@@ -25,6 +26,7 @@ type State = {
   halted: boolean
   error: string | null
   pick: (sheet: Sheet) => void
+  toggleMute: () => void
   say: (who: Bubble['who'], text: string, act?: string) => void
   setFlag: (flag: string) => void
   enter: (roomId: string) => void
@@ -52,8 +54,10 @@ const fresh = {
 
 export const useGame = create<State>((set, get) => ({
   sheet: null,
+  muted: false,
   ...fresh,
   pick: (sheet) => set({ sheet, ...fresh }),
+  toggleMute: () => set((s) => ({ muted: !s.muted })),
   say: (who, text, act) =>
     set((s) => ({ bubbles: [...s.bubbles, { id: crypto.randomUUID(), who, text, act }] })),
   setFlag: (flag) => set((s) => (s.flags.includes(flag) ? s : { flags: [...s.flags, flag] })),

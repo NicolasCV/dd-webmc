@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { agentTurn, resetHistory } from '../agent/turn'
-import { examineProp, go, openExits, playerAttempt, playerChallenges } from '../game/tools'
+import { agentTurn, resetHistory, retry } from '../agent/turn'
+import { stopAudio } from '../audio'
+import { examineProp, go, openExits, playerAttempt, playerChallenges, unseenProps } from '../game/tools'
 import { rooms } from '../game/world'
 import { TURN_BUDGET, useGame } from '../store'
 
 export function Chat() {
   const [draft, setDraft] = useState('')
-  const { sheet, bubbles, roomId, flags, turns, busy, halted, error, say, halt, reset, leave } = useGame()
+  const { sheet, bubbles, roomId, flags, turns, busy, halted, error, muted, say, halt, reset, leave, toggleMute } =
+    useGame()
   const room = rooms[roomId]
 
   const send = (e: React.FormEvent) => {
@@ -26,11 +28,13 @@ export function Chat() {
   }
 
   const restart = () => {
+    stopAudio()
     resetHistory()
     reset()
   }
 
   const change = () => {
+    stopAudio()
     resetHistory()
     leave()
   }
@@ -43,6 +47,16 @@ export function Chat() {
           <span className={turns >= TURN_BUDGET ? 'text-oxblood' : 'text-pencil'}>
             turns: {turns}/{TURN_BUDGET}
           </span>
+          <button
+            type="button"
+            onClick={() => {
+              stopAudio()
+              toggleMute()
+            }}
+            className={muted ? 'text-oxblood hover:underline' : 'text-brass hover:underline'}
+          >
+            {muted ? 'muted' : 'voice on'}
+          </button>
           <button type="button" onClick={halt} className="text-oxblood hover:underline">
             halt
           </button>
@@ -69,12 +83,19 @@ export function Chat() {
         ))}
         {busy && <p className="font-mono text-xs text-pencil">…</p>}
         {halted && <p className="font-mono text-xs text-oxblood">halted</p>}
-        {error && <p className="font-mono text-xs text-oxblood">{error}</p>}
+        {error && (
+          <p className="font-mono text-xs text-oxblood">
+            {error}{' '}
+            <button type="button" onClick={() => void retry()} className="underline">
+              try again
+            </button>
+          </p>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-ink/25 pt-3 font-mono text-xs">
         <span className="text-pencil">you:</span>
-        {room.props.map((p) => (
+        {unseenProps(room, flags).map((p) => (
           <button
             key={p.id}
             type="button"

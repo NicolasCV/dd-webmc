@@ -1,5 +1,6 @@
 import type { RegisteredTool } from '@mcp-b/webmcp-types'
 import { ACT_NAMES } from '../game/sheet'
+import { setOwnTurn } from '../game/tools'
 import { MAX_STEPS, TURN_BUDGET, useGame } from '../store'
 import { callTool, listTools, toInputSchema } from '../webmcp/context'
 import { liveDefs, settled } from '../webmcp/registry'
@@ -36,12 +37,17 @@ const toOpenAITool = (t: RegisteredTool) => ({
   },
 })
 
+let lastTrigger: string | null = null
+export const retry = () => (lastTrigger ? agentTurn(lastTrigger) : undefined)
+
 export async function agentTurn(trigger: string) {
   const { halted, busy, turns, setBusy, setError, spendTurn } = useGame.getState()
   if (halted || busy) return
   if (turns >= TURN_BUDGET) return setError('Turn budget spent. Restart to keep playing.')
 
+  lastTrigger = trigger
   setBusy(true)
+  setOwnTurn(true)
   setError(null)
   spendTurn()
   history.push({ role: 'user', content: trigger })
@@ -93,8 +99,15 @@ export async function agentTurn(trigger: string) {
       if (calls.some((c) => ACT_NAMES.includes(c.function.name))) break
     }
   } catch (err) {
-    setError(err instanceof Error ? err.message : String(err))
+    // In fiction, because a stack trace in a dungeon is a dead end for a judge.
+    const timedOut = err instanceof DOMException && err.name === 'TimeoutError'
+    setError(
+      timedOut
+        ? 'They are not answering. Say it again.'
+        : `Something went wrong out here: ${err instanceof Error ? err.message : String(err)}`,
+    )
   } finally {
+    setOwnTurn(false)
     setBusy(false)
   }
 }
