@@ -43,7 +43,6 @@ export function Sheet() {
   // never disagree with what an agent actually sees.
   useEffect(() => {
     const mc = modelContext()
-    if (!mc) return
     const refresh = () => void listTools().then((ts) => setTools(ts.map((t) => t.name)))
     refresh()
     mc.addEventListener('toolchange', refresh)

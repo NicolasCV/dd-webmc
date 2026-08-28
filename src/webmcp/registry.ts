@@ -14,7 +14,6 @@ const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').match
 
 async function run(desired: WebMcpTool[]) {
   const mc = modelContext()
-  if (!mc) return
   const want = new Map(desired.map((t) => [t.name, t]))
   const gone = [...live.entries()].filter(([name]) => !want.has(name))
 

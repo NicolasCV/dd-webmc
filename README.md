@@ -105,9 +105,14 @@ which is what makes the interface teach itself.
 
 ## Running it
 
-Requires Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled, or launched with
+Best in Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled, or launched with
 `--enable-features=WebMCP`. `document.modelContext` is the current surface —
 `navigator.modelContext` was deprecated in Chrome 150 and blog posts still using it are stale.
+
+**Without the flag it still plays.** A missing `document.modelContext` falls back to the same
+contract backed by a `Map`, so the game, the reconciler and the sheet all behave identically
+and only the part that genuinely needs the browser — an outside agent discovering the tools —
+is missing. A banner says so. A dead page demonstrates nothing.
 
 ```sh
 npm install
