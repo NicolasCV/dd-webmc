@@ -160,7 +160,7 @@ warmly on its way back out.
 
 The live tool count peaks at **12** — Sister Wen in the Long Hall once the vault is open, and
 Ilke there too; Brakka tops out at 11. That is not an estimate: `npm run check` enumerates
-every character against every room against all 131,072 flag combinations, 393,216 cases, and
+every character against every room against all 32,768 flag combinations — 393,216 cases, and
 fails the build if any of them exceeds twelve. Selection accuracy degrades past roughly that
 number, which is the quiet way most WebMCP demos stop working well, so twelve is a ceiling
 rather than a comfortable margin. What holds it there: props capped at three per room, skills
