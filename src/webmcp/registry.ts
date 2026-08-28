@@ -43,9 +43,9 @@ export const reconcile = (desired: WebMcpTool[]) => (queue = queue.then(() => ru
  * agent reads the registry, so it must not lag a render behind the world.
  */
 export function startRegistry() {
-  const sync = (s = useGame.getState()) => void reconcile(computeTools(s.roomId, s.flags))
+  const sync = (s = useGame.getState()) => void reconcile(computeTools(s.sheet, s.roomId, s.flags))
   sync()
   return useGame.subscribe((s, prev) => {
-    if (s.roomId !== prev.roomId || s.flags !== prev.flags) sync(s)
+    if (s.sheet !== prev.sheet || s.roomId !== prev.roomId || s.flags !== prev.flags) sync(s)
   })
 }

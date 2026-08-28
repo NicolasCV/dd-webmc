@@ -1,4 +1,12 @@
-export type Skill = 'force' | 'intimidation' | 'perception' | 'lore' | 'lockpicking'
+export type Skill =
+  | 'force'
+  | 'stealth'
+  | 'lockpicking'
+  | 'lore'
+  | 'perception'
+  | 'medicine'
+  | 'persuasion'
+  | 'intimidation'
 
 export type Prop = {
   id: string
@@ -91,6 +99,21 @@ export const rooms: Record<string, Room> = {
       { id: 'brazier', label: 'a cold brazier', onExamine: 'Cold. Ash, and under the ash, teeth.' },
     ],
     exits: [{ to: 'landing' }, { to: 'cistern' }, { to: 'vault', needs: 'sigil' }],
+    challenges: [
+      {
+        id: 'pick_vault',
+        description:
+          'Work the vault door without the sigil. Someone went to trouble here and you ' +
+          'are the trouble that came after.',
+        skill: 'lockpicking',
+        attr: 'dex',
+        dc: 15,
+        success: 'The wards turn over one at a time and the door gives.',
+        fail: 'A ward bites down. The pick snaps.',
+        sets: 'sigil',
+        gone: 'sigil',
+      },
+    ],
   },
 
   cistern: {
@@ -119,6 +142,19 @@ export const rooms: Record<string, Room> = {
         dc: 12,
         success: 'It steps aside and holds out the tally-stick.',
         fail: 'It does not blink. It has no eyelids. It writes something down.',
+        sets: 'tally',
+        gone: 'tally',
+      },
+      {
+        id: 'persuade_scribe',
+        description:
+          'Talk to the dead clerk like a clerk. It kept a ledger once. Ledgers can be ' +
+          'settled, and you have something it wants written down.',
+        skill: 'persuasion',
+        attr: 'cha',
+        dc: 13,
+        success: 'It turns the tally-stick around and offers you the notched end.',
+        fail: 'It has heard better, from better, and they are still down here.',
         sets: 'tally',
         gone: 'tally',
       },

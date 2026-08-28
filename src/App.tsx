@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
+import { useGame } from './store'
 import { Chat } from './ui/Chat'
 import { Sheet } from './ui/Sheet'
+import { Start } from './ui/Start'
 import { supported } from './webmcp/context'
 import { startRegistry } from './webmcp/registry'
 
 export default function App() {
   const [hasWebMcp] = useState(supported)
+  const started = useGame((s) => !!s.sheet)
 
   useEffect(startRegistry, [])
 
@@ -16,8 +19,14 @@ export default function App() {
           document.modelContext is missing — enable chrome://flags/#enable-webmcp-testing
         </div>
       )}
-      <Chat />
-      <Sheet />
+      {started ? (
+        <>
+          <Chat />
+          <Sheet />
+        </>
+      ) : (
+        <Start />
+      )}
     </main>
   )
 }

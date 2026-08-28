@@ -1,5 +1,5 @@
 import type { RegisteredTool } from '@mcp-b/webmcp-types'
-import { speechActNames } from '../game/brakka'
+import { ACT_NAMES } from '../game/sheet'
 import { MAX_STEPS, TURN_BUDGET, useGame } from '../store'
 import { callTool, listTools, toInputSchema } from '../webmcp/context'
 import { liveDefs, settled } from '../webmcp/registry'
@@ -90,7 +90,7 @@ export async function agentTurn(trigger: string) {
 
       // An utterance ends the turn. Without this the model keeps its remaining
       // steps and rephrases itself until the cap, which reads as babbling.
-      if (calls.some((c) => speechActNames.has(c.function.name))) break
+      if (calls.some((c) => ACT_NAMES.includes(c.function.name))) break
     }
   } catch (err) {
     setError(err instanceof Error ? err.message : String(err))

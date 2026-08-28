@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { Sheet } from './game/sheet'
 import type { Roll } from './game/world'
 import { START } from './game/world'
 
@@ -13,6 +14,7 @@ export const MAX_STEPS = 5
 export const TURN_BUDGET = 40
 
 type State = {
+  sheet: Sheet | null
   bubbles: Bubble[]
   roomId: string
   flags: string[]
@@ -22,6 +24,7 @@ type State = {
   busy: boolean
   halted: boolean
   error: string | null
+  pick: (sheet: Sheet) => void
   say: (who: Bubble['who'], text: string, act?: string) => void
   setFlag: (flag: string) => void
   enter: (roomId: string) => void
@@ -32,6 +35,7 @@ type State = {
   setError: (error: string | null) => void
   halt: () => void
   reset: () => void
+  leave: () => void
 }
 
 const fresh = {
@@ -46,8 +50,10 @@ const fresh = {
   error: null,
 }
 
-export const useGame = create<State>((set) => ({
+export const useGame = create<State>((set, get) => ({
+  sheet: null,
   ...fresh,
+  pick: (sheet) => set({ sheet, ...fresh }),
   say: (who, text, act) =>
     set((s) => ({ bubbles: [...s.bubbles, { id: crypto.randomUUID(), who, text, act }] })),
   setFlag: (flag) => set((s) => (s.flags.includes(flag) ? s : { flags: [...s.flags, flag] })),
@@ -58,5 +64,6 @@ export const useGame = create<State>((set) => ({
   setBusy: (busy) => set({ busy }),
   setError: (error) => set({ error }),
   halt: () => set({ halted: true, busy: false }),
-  reset: () => set(fresh),
+  reset: () => set({ ...fresh, sheet: get().sheet }),
+  leave: () => set({ ...fresh, sheet: null }),
 }))

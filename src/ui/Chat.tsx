@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { agentTurn, resetHistory } from '../agent/turn'
-import { examineProp, go, openExits } from '../game/tools'
+import { examineProp, go, openExits, playerAttempt, playerChallenges } from '../game/tools'
 import { rooms } from '../game/world'
 import { TURN_BUDGET, useGame } from '../store'
 
 export function Chat() {
   const [draft, setDraft] = useState('')
-  const { bubbles, roomId, flags, turns, busy, halted, error, say, halt, reset } = useGame()
+  const { sheet, bubbles, roomId, flags, turns, busy, halted, error, say, halt, reset, leave } = useGame()
   const room = rooms[roomId]
 
   const send = (e: React.FormEvent) => {
@@ -30,6 +30,11 @@ export function Chat() {
     reset()
   }
 
+  const change = () => {
+    resetHistory()
+    leave()
+  }
+
   return (
     <section className="flex min-w-0 flex-1 flex-col">
       <header className="flex items-baseline justify-between border-b border-ink/25 pb-2">
@@ -43,6 +48,9 @@ export function Chat() {
           </button>
           <button type="button" onClick={restart} className="text-pencil hover:underline">
             restart
+          </button>
+          <button type="button" onClick={change} className="text-pencil hover:underline">
+            change character
           </button>
         </div>
       </header>
@@ -75,6 +83,17 @@ export function Chat() {
             className="text-brass hover:underline disabled:text-pencil/50"
           >
             examine_{p.id}
+          </button>
+        ))}
+        {playerChallenges(room, sheet, flags).map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            disabled={busy || halted}
+            onClick={() => act(`You try it yourself. ${playerAttempt(c)}`)}
+            className="text-brass hover:underline disabled:text-pencil/50"
+          >
+            {c.id}
           </button>
         ))}
         {openExits(room, flags).map((e) => (

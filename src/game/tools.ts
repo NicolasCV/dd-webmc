@@ -1,16 +1,15 @@
 import { useGame } from '../store'
 import type { WebMcpTool } from '../webmcp/context'
-import { brakka, speechActs } from './brakka'
+import type { Sheet } from './sheet'
+import { speechTools } from './sheet'
 import type { Challenge, Prop, Room } from './world'
 import { roll, rooms } from './world'
 
 const empty = { type: 'object', properties: {} } as const
 
-const has = (skill: string) => brakka.skills.includes(skill as never)
-
-const attempt = (c: Challenge) => {
+const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   const g = useGame.getState()
-  const r = roll(brakka.attributes[c.attr], c.dc)
+  const r = roll(attrs[c.attr], c.dc + dcBump)
   const line = `${c.id} → ${r.ok ? 'OK' : 'FAIL'}. ${r.total} vs DC ${r.dc}. ${r.ok ? c.success : c.fail}`
   g.setRoll({ ...r, of: c.id })
   g.say('world', line)
@@ -18,6 +17,14 @@ const attempt = (c: Challenge) => {
   if (flag) g.setFlag(flag)
   return line
 }
+
+/** Untrained, and it shows. Exists so no room is ever sealed by the companion's sheet. */
+export const playerAttempt = (c: Challenge) => attempt(c, { str: 10, dex: 10, wis: 10, cha: 10 }, 2)
+
+export const playerChallenges = (room: Room, sheet: Sheet | null, flags: string[]) =>
+  (room.challenges ?? []).filter(
+    (c) => !sheet?.skills.includes(c.skill) && !(c.gone && flags.includes(c.gone)),
+  )
 
 export const examineProp = (p: Prop) => {
   const g = useGame.getState()
@@ -35,11 +42,11 @@ export const go = (to: string) => {
   return `move_${to} → OK. ${room.name}.`
 }
 
-const challengeTool = (c: Challenge): WebMcpTool => ({
+const challengeTool = (sheet: Sheet) => (c: Challenge): WebMcpTool => ({
   name: c.id,
   description: c.description,
   inputSchema: empty,
-  execute: () => attempt(c),
+  execute: () => attempt(c, sheet.attributes),
 })
 
 const examineTool = (p: Prop): WebMcpTool => ({
@@ -60,14 +67,16 @@ const moveTool = (to: string): WebMcpTool => ({
 export const openExits = (room: Room, flags: string[]) =>
   room.exits.filter((e) => !e.needs || flags.includes(e.needs))
 
-/** The single source of truth for what he can do right now. Keep the total under 12. */
-export function computeTools(roomId: string, flags: string[]): WebMcpTool[] {
+/** The single source of truth for what it can do right now. Keep the total under 12. */
+export function computeTools(sheet: Sheet | null, roomId: string, flags: string[]): WebMcpTool[] {
+  if (!sheet) return []
   const room = rooms[roomId]
+  const has = (skill: string) => sheet.skills.includes(skill as never)
   return [
-    ...speechActs,
+    ...speechTools(sheet),
     ...(room.challenges ?? [])
       .filter((c) => has(c.skill) && !(c.gone && flags.includes(c.gone)))
-      .map(challengeTool),
+      .map(challengeTool(sheet)),
     ...room.props.slice(0, 3).filter((p) => !p.requires || has(p.requires)).map(examineTool),
     ...openExits(room, flags).map((e) => moveTool(e.to)),
   ]

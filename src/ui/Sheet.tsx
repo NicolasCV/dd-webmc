@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { brakka } from '../game/brakka'
+import { FAMILIES } from '../game/sheet'
 import { useGame } from '../store'
 import { listTools, modelContext } from '../webmcp/context'
 
@@ -24,9 +24,20 @@ function StrikeRule() {
   )
 }
 
+export function Monogram({ name, className = '' }: { name: string; className?: string }) {
+  return (
+    <div
+      className={`grid shrink-0 place-items-center border border-ink/40 bg-ink/5 font-display text-ink/70 ${className}`}
+      aria-hidden
+    >
+      {name.slice(0, 1).toUpperCase()}
+    </div>
+  )
+}
+
 export function Sheet() {
   const [tools, setTools] = useState<string[]>([])
-  const { striking, lastRoll } = useGame()
+  const { sheet, striking, lastRoll } = useGame()
 
   // Read the live registry rather than tracking our own copy, so the sheet can
   // never disagree with what an agent actually sees.
@@ -39,13 +50,21 @@ export function Sheet() {
     return () => mc.removeEventListener('toolchange', refresh)
   }, [])
 
+  if (!sheet) return null
+  const closed = Object.entries(FAMILIES).filter(([, f]) => !f.gate(sheet.disposition))
+
   return (
     <aside className="w-80 shrink-0 self-start border border-ink/25 bg-vellum/60 p-5">
-      <h2 className="font-display text-2xl tracking-tight">{brakka.name}</h2>
-      <p className="mt-1 text-sm text-pencil italic">{brakka.oneLine}</p>
+      <div className="flex items-start gap-3">
+        <Monogram name={sheet.name} className="size-14 text-2xl" />
+        <div className="min-w-0">
+          <h2 className="font-display text-2xl tracking-tight">{sheet.name}</h2>
+          <p className="mt-0.5 text-sm text-pencil italic">{sheet.oneLine}</p>
+        </div>
+      </div>
 
       <dl className="mt-4 flex gap-4 font-mono text-xs">
-        {Object.entries(brakka.attributes).map(([k, v]) => (
+        {Object.entries(sheet.attributes).map(([k, v]) => (
           <div key={k}>
             <dt className="text-pencil uppercase">{k}</dt>
             <dd className="text-base">{v}</dd>
@@ -53,7 +72,16 @@ export function Sheet() {
         ))}
       </dl>
 
-      <p className="mt-3 font-mono text-xs text-pencil">{brakka.skills.join(' · ')}</p>
+      <p className="mt-3 font-mono text-xs text-pencil">{sheet.skills.join(' · ')}</p>
+
+      <p className="mt-2 font-mono text-xs">
+        <span className="text-pencil">
+          warmth {sheet.disposition.warmth} · nerve {sheet.disposition.nerve}
+        </span>
+        {closed.length > 0 && (
+          <span className="text-oxblood"> — {closed.map(([k]) => k).join(', ')} closed</span>
+        )}
+      </p>
 
       <h3 className="mt-6 border-t border-ink/25 pt-3 font-mono text-xs tracking-widest text-pencil uppercase">
         Can do now
@@ -70,7 +98,10 @@ export function Sheet() {
       </ul>
 
       {lastRoll && (
-        <p key={`${lastRoll.of}-${lastRoll.d20}`} className="mt-6 border-t border-ink/25 pt-3 font-mono text-xs">
+        <p
+          key={`${lastRoll.of}-${lastRoll.d20}`}
+          className="mt-6 border-t border-ink/25 pt-3 font-mono text-xs"
+        >
           <span className="die mr-2 text-base">⚄</span>
           <span className={lastRoll.ok ? 'text-brass' : 'text-oxblood'}>
             {lastRoll.of} {lastRoll.d20} → {lastRoll.total} vs DC {lastRoll.dc}
