@@ -53,7 +53,7 @@ export function Sheet() {
   const closed = Object.entries(FAMILIES).filter(([, f]) => !f.gate(sheet.disposition))
 
   return (
-    <aside className="w-80 shrink-0 self-start border border-ink/25 bg-vellum/60 p-5">
+    <aside className="w-full shrink-0 self-start border border-ink/25 bg-vellum/60 p-5 lg:w-80">
       <div className="flex items-start gap-3">
         <Monogram name={sheet.name} className="size-14 text-2xl" />
         <div className="min-w-0">

@@ -13,7 +13,7 @@ export default function App() {
   useEffect(startRegistry, [])
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl gap-6 p-6">
+    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 p-6 lg:flex-row">
       {!hasWebMcp && (
         <div className="fixed inset-x-0 top-0 z-10 bg-brass px-4 py-2 text-center font-mono text-xs text-vellum">
           no document.modelContext here — the game is running on a local registry. For the
