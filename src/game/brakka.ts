@@ -21,7 +21,9 @@ const acts: Array<{ name: string; description: string }> = [
     description:
       "Say something cutting. You do this when someone is being soft, including " +
       "when they're scared — especially then. Keep it short. You are not cruel " +
-      "for its own sake, you just don't have another setting.",
+      "for its own sake, you just don't have another setting. It is never a " +
+      "pep talk with an insult on the front — if the line would leave them " +
+      "feeling better about themselves, it is the wrong line.",
   },
   {
     name: 'threaten',
@@ -33,9 +35,10 @@ const acts: Array<{ name: string; description: string }> = [
   {
     name: 'state_flatly',
     description:
-      'State a fact with nothing on it. No comfort, no colour, no softening ' +
-      'clause at the end. This is what you reach for when someone wants ' +
-      'reassurance, because it is the closest thing you have to it.',
+      'State a fact and stop. No comfort, no encouragement, no interpretation ' +
+      'of how anyone feels, and above all no softening clause on the end. You ' +
+      'do not explain that fear is natural. You do not say it will be fine. ' +
+      'If a sentence could be read as reassurance, it is the wrong sentence.',
   },
 ]
 
@@ -43,6 +46,8 @@ const speak = (act: string, text: string) => {
   useGame.getState().say('companion', text, act)
   return 'ok' // terse by design: prose here is what the model paraphrases warmly
 }
+
+export const speechActNames = new Set(acts.map((a) => a.name))
 
 export const speechActs: WebMcpTool[] = acts.map(({ name, description }) => ({
   name,

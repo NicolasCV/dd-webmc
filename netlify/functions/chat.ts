@@ -1,6 +1,11 @@
 export const config = { path: '/api/chat' }
 
-const MODEL = 'gpt-5'
+// Cheap by default; the eval (design doc §10) overrides this to compare setups.
+const MODEL = process.env.CHAT_MODEL ?? 'gpt-5-mini'
+
+// Reasoning tokens count toward this cap, so leave headroom above the one or two
+// sentences a speech act actually emits.
+const MAX_COMPLETION_TOKENS = 1500
 
 export default async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 })
@@ -16,13 +21,13 @@ export default async (req: Request): Promise<Response> => {
     body: JSON.stringify({
       model: MODEL,
       messages,
+      reasoning_effort: 'low',
+      max_completion_tokens: MAX_COMPLETION_TOKENS,
       ...(Array.isArray(tools) && tools.length ? { tools, tool_choice: 'auto' } : {}),
     }),
   })
 
-  if (!upstream.ok) {
-    return new Response(await upstream.text(), { status: upstream.status })
-  }
+  if (!upstream.ok) return new Response(await upstream.text(), { status: upstream.status })
 
   const data = await upstream.json()
   return Response.json(data.choices?.[0]?.message ?? { role: 'assistant', content: '' })
