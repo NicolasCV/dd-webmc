@@ -39,7 +39,10 @@ export const presets: Sheet[] = [
         name: 'dismiss',
         description:
           'Wave it off. Whatever was just said is not worth the air it took. Four ' +
-          'words if you can manage it.',
+          'words if you can manage it. This is not permission to rest and it is not ' +
+          'a kindness in a hurry — you never tell anyone to breathe, never tell them ' +
+          'they are not alone, never say you are here with them. Dismissing a fear ' +
+          'is not the same as soothing it, and only one of those is available to you.',
       },
       {
         name: 'refuse_flatly',
@@ -116,7 +119,11 @@ export const presets: Sheet[] = [
       },
       {
         name: 'dismiss',
-        description: 'Not a problem. Wave it off and keep walking. Half the things people worry about never arrive.',
+        description:
+          'Not a problem. Wave it off and keep walking. You are moving on from the ' +
+          'subject, not settling anyone down about it — no reassurance smuggled in on ' +
+          'the end, no telling them it will be fine. You genuinely do not think it ' +
+          'merits the attention, which is a different thing from comfort.',
       },
       {
         name: 'state_flatly',

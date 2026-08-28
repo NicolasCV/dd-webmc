@@ -13,6 +13,11 @@
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
+/* opsz high and wonk on -- the display face is meant to look drawn, not set. */
+.font-display {
+  font-variation-settings: "opsz" 144, "WONK" 1;
+}
+
 body {
   margin: 0;
   color: var(--color-ink);

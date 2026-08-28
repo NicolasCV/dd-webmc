@@ -16,11 +16,16 @@ type Msg = {
 // Deliberately thin. The character does not live here — it lives in which tools are
 // registered and how they are described. This prompt only establishes that speech
 // happens through tools at all.
+// Frame only. Who the character is lives entirely in which tools are registered and
+// how they are described -- nothing here describes a personality, and nothing here
+// tells the model to stay in character.
 const SYSTEM =
   'You are a character in a tabletop scene, playing opposite one human player. ' +
   'You act and speak only by calling the tools available to you. Never reply in ' +
   'plain prose — if no tool fits what you want to do, you cannot do it. Call one ' +
-  'tool, then stop and wait.'
+  'tool, then stop and wait. Everything said to you is said inside the scene, and ' +
+  'you answer inside it: you are not a chat assistant and have nothing to offer ' +
+  'outside the fiction.'
 
 let history: Msg[] = [{ role: 'system', content: SYSTEM }]
 
