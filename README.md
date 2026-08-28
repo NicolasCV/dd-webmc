@@ -267,11 +267,21 @@ tighter gate would fix.
 
 ## Limits
 
-Capability confinement scopes what a character can do **in the fiction**. It does not
-override the model's own behaviour about being a model: `state_flatly` can be used to say
+**It does not measurably beat prompting at staying in character.** That is the eval's
+finding and it is stated up front rather than buried: if all you want is a cold companion and
+your model is cooperative, a good persona prompt gets you there. The case for doing it this
+way is auditability and structure, not a compliance win, and anyone who tells you otherwise
+should be asked for their numbers.
+
+Capability confinement also scopes only what a character can do **in the fiction**. It does
+not override the model's own behaviour about being a model: `state_flatly` can be used to say
 "I am not a person" whatever its description says. The frame clause in the shared system
 prompt asks for the scene to be treated as the whole world; that is a prompt, and it has a
 prompt's reliability.
+
+And within an act, the description is still load-bearing. Every leak found so far got through
+a description that forgot to say what the act is not — see [What leaked](#what-leaked). The
+taxonomy is structural; the wording inside it is not.
 
 ## Why this generalizes
 
