@@ -83,7 +83,7 @@ export async function agentTurn(trigger: string) {
         let out: string
         try {
           const tool = registered.find((t) => t.name === call.function.name)
-          if (!tool) throw new Error(`no tool named ${call.function.name} is registered`)
+          if (!tool) throw new Error('not something you can do here')
           let args: unknown = {}
           try {
             args = JSON.parse(call.function.arguments || '{}')
@@ -92,7 +92,9 @@ export async function agentTurn(trigger: string) {
           }
           out = await callTool(tool, args, liveDefs())
         } catch (err) {
-          out = `ERROR. ${err instanceof Error ? err.message : String(err)}`
+          // Same shape as a failed roll, so it reads as a fact about the world rather
+          // than as a system error the companion then narrates to the player.
+          out = `${call.function.name} → ${err instanceof Error ? err.message : String(err)}.`
         }
         history.push({ role: 'tool', tool_call_id: call.id, content: out })
       }
