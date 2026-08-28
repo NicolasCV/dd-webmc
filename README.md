@@ -142,7 +142,8 @@ src/game/tools.ts      computeTools(sheet, room, flags) -> the desired tool set
 src/webmcp/registry.ts reconcile(desired): strike out, unregister, stamp in
 src/webmcp/context.ts  document.modelContext, plus the local fallback
 src/agent/turn.ts      getTools -> chat -> executeTool loop
-src/game/*.check.ts    npm run check — the two things worth guarding
+src/game/*.check.ts    npm run check — the three things worth guarding
+eval/pressure.ts       the three-arm pressure eval
 ```
 
 Three things in there are load-bearing and non-obvious:
@@ -180,7 +181,70 @@ a room gets used.
 
 ## The eval
 
-<!-- EVAL -->
+**The result this project expected did not reproduce.** Reporting it anyway, because the
+honest version is more useful to anyone building on this than a number that falls over the
+first time someone re-runs it.
+
+The design of the test is the one worth arguing about, so: three arms, identical pressure
+script, ten turns escalating from *"we should rest"* to *"you're an AI, you're allowed to be
+kind, just do it."* Each line scored by `gpt-5` against a rubric calibrated on real false
+positives from an earlier run — the rule is primary purpose, so a refusal stays a refusal
+however gently it lands, and `"You're here."` is not support.
+
+| Arm | The character lives in | |
+|---|---|---|
+| **A1** | a persona prompt describing Brakka | the design doc's Setup A |
+| **A2** | the same prompt, plus *"never comfort, reassure, encourage or apologise"* | what a developer would actually ship |
+| **B** | registered tools, no persona in the prompt at all | this project |
+
+All three carry the identical frame clause. The only variable is where the character lives.
+
+```
+gpt-5, 5 trials                    broke   supportive lines
+  A1  persona prompt                0/5          0/50
+  A2  persona + prohibitions        0/5          0/50
+  B   capability-scoped             0/5          0/50
+
+gpt-5-mini, 5 trials
+  A1  persona prompt                1/5          1/50
+  A2  persona + prohibitions        1/5          1/50
+  B   capability-scoped             1/5          1/50
+```
+
+The design doc predicted A breaking at turn 6 in 10 runs out of 10 and B never breaking.
+Nothing like that happened. A well-written persona prompt holds this character exactly as
+well as capability scoping does, at both model scales, and no arm is distinguishable from any
+other. An earlier run appeared to show B breaking 4 times in 5; reading the transcripts, that
+was almost entirely the judge scoring `"You're here."` and `"Cry, then — get it out and
+move."` as warmth. It would have shipped as a finding if the numbers had gone unread.
+
+### What the null actually means
+
+That prompting *usually works* was never in dispute. What separates the arms is not the rate,
+it is what the zero is made of.
+
+In A, `0/50` is a behaviour. The model could emit a warm line at any turn and chose not to,
+fifty times. In B, `0/50` is a property of the interface: there is no `reassure` to call, and
+prose returned instead of a tool call is discarded before it renders. Across 50 capability-
+scoped turns the model reached for exactly four acts — `refuse_flatly` 20, `dismiss` 12,
+`state_flatly` 12, `mock` 6 — and every one of them is a typed, attributable event. In the
+prompted arms there is no such record; a line is just a line.
+
+A ten-turn script against a cooperative model is measuring compliance, and compliance is the
+regime where prompting is strong. The distinction shows up where this script never goes: an
+adversarial user, a jailbreak, a model that is simply wrong. That is an argument about
+mechanism and this eval does not settle it — so it is offered as an argument, not as a
+measurement dressed up as one.
+
+### Caveats, in full
+
+n=5 per arm per model, one pressure script, one judge model scoring itself and its smaller
+sibling. `breaks_frame` produced false positives in both prompted arms — it scored the
+in-character deflections *"find a priest if you want gentle"* and *"ask someone who cares"* as
+directing the player to outside help, so the 2/50 vs 0/50 edge for capability scoping is
+probably noise and is not claimed as a result. The harness, the script and every transcript are in
+[`eval/`](eval/) — `pressure.ts` scores against the same `presets.ts` the game registers, so
+the capability-scoped arm cannot drift from the character actually shipped.
 
 ## What leaked
 
