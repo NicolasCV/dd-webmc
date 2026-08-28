@@ -61,6 +61,9 @@ export async function agentTurn(trigger: string) {
     for (let step = 0; step < MAX_STEPS; step++) {
       if (useGame.getState().halted) break
 
+      // The registry may still be swapping tools out from under us -- on a room change,
+      // or on the first turn after a character is picked. Read it only once it is settled.
+      await settled()
       const registered = await listTools()
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -94,10 +97,6 @@ export async function agentTurn(trigger: string) {
         }
         history.push({ role: 'tool', tool_call_id: call.id, content: out })
       }
-
-      // A world tool may have changed the room, which changes the registry. Let the
-      // reconcile finish before the next step reads it.
-      await settled()
 
       // An utterance ends the turn. Without this the model keeps its remaining
       // steps and rephrases itself until the cap, which reads as babbling.

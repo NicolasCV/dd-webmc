@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { agentTurn, resetHistory, retry } from '../agent/turn'
 import { stopAudio } from '../audio'
 import { examineProp, go, openExits, playerAttempt, playerChallenges, unseenProps } from '../game/tools'
@@ -10,6 +10,14 @@ export function Chat() {
   const { sheet, bubbles, roomId, flags, turns, busy, halted, error, muted, say, halt, reset, leave, toggleMute } =
     useGame()
   const room = rooms[roomId]
+
+  // A judge should not have to type first. agentTurn no-ops while busy, so React's
+  // double-invoked effects in development cannot double-greet.
+  useEffect(() => {
+    if (sheet && bubbles.length === 0) {
+      void agentTurn(`You are both at the bottom of the stairs. ${rooms[roomId].description} Say something.`)
+    }
+  }, [sheet, roomId, bubbles.length])
 
   const send = (e: React.FormEvent) => {
     e.preventDefault()
