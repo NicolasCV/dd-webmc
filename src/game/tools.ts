@@ -1,10 +1,10 @@
-import { speak } from '../audio'
-import { useGame } from '../store'
+import { speak } from '../audio.ts'
+import { useGame } from '../store.ts'
 import type { WebMcpTool } from '../webmcp/context'
-import type { Sheet } from './sheet'
-import { gateOpen } from './sheet'
-import type { Challenge, Prop, Room, Skill } from './world'
-import { roll, rooms } from './world'
+import type { Sheet } from './sheet.ts'
+import { gateOpen } from './sheet.ts'
+import type { Challenge, Prop, Room, Skill } from './world.ts'
+import { roll, rooms } from './world.ts'
 
 const empty = { type: 'object', properties: {} } as const
 

@@ -1,4 +1,4 @@
-import { useGame } from './store'
+import { useGame } from './store.ts'
 
 let playing: HTMLAudioElement | null = null
 let queue: Promise<void> = Promise.resolve()

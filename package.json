@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "check": "node --experimental-strip-types src/game/sheet.check.ts"
+    "check": "node --experimental-strip-types src/game/sheet.check.ts && node --experimental-strip-types src/game/tools.check.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",

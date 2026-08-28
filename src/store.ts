@@ -1,7 +1,7 @@
 import { create } from 'zustand'
-import type { Sheet } from './game/sheet'
-import type { Roll } from './game/world'
-import { START } from './game/world'
+import type { Sheet } from './game/sheet.ts'
+import type { Roll } from './game/world.ts'
+import { START } from './game/world.ts'
 
 export type Bubble = {
   id: string

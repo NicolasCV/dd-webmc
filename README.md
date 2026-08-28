@@ -11,16 +11,17 @@ character — including in what it can say.
 
 ## Why a game
 
-Games are where new interaction paradigms get proven. The mouse arrived with Doug
-Engelbart's demo and got its argument from Solitaire. Multi-touch shipped on a phone and got
-its argument from Angry Birds. Every other WebMCP demo has the agent doing chores — booking,
-filling, fetching. This is the first one where the agent is a peer, and being a peer is a
-much harder problem than being a butler.
+Games are where new interaction paradigms get taught. Microsoft shipped Solitaire with
+Windows 3.0 to teach a generation to drag with a mouse, and it worked better than any manual
+would have. The WebMCP demos out there mostly have the agent doing chores — booking, filling,
+fetching. A chore agent is a butler. This one is a peer, which is a harder problem, and games
+are the cheapest honest place to find out whether it can be solved.
 
-The audience is real and specific: solo tabletop players. It is an established community with
-an established gap, and the gap is not a narrator. Every AI attempt so far builds a Dungeon
-Master. What a solo player is missing is a *party member* — someone with their own opinions,
-their own competence, and their own refusals.
+The audience is solo tabletop players: an established community with an established gap. Most
+AI attempts in that space build a Dungeon Master — a narrator. What a solo player is more
+often missing is a *party member*: someone with their own opinions, their own competence, and
+their own refusals. A narrator agrees with you. A party member is the interesting case
+precisely because it doesn't have to.
 
 ## The mechanic
 
@@ -43,9 +44,9 @@ individually, drawn from six families, and each family is gated on disposition:
 | Disclose | `admit_fear` `share_memory` | warmth > 75 |
 
 Brakka, a gruff mercenary, has warmth 15. Support and Disclose are closed. Ask him for
-comfort and he can state a fact, change the subject, or mock you — there is no fourth option,
-because there is no fourth tool. Sister Wen has nerve 45: she is physically unable to mock
-you. The comedy and the mechanic are the same thing, which is usually the sign that a design
+comfort and he can state a fact, wave it off, mock you, threaten something, or refuse — those
+five, because those are the five tools he has. Sister Wen has nerve 45, which closes Provoke:
+she is structurally unable to mock you. The comedy and the mechanic are the same thing, which is usually the sign that a design
 isn't bolted together.
 
 Tool descriptions are the only channel through which the model learns who it is, so they are
@@ -90,8 +91,13 @@ becomes a tool for him — the player has to be the one who reads. Doing so sets
 opens the vault, which registers `move_vault` on *his* sheet: a capability he could not have
 unlocked himself.
 
-Ilke has `lockpicking` instead, and opens the same door a different way. Sister Wen has
-neither, and the player forces it themselves, untrained, at DC +2.
+Bring someone else and the same door opens a different way. Ilke has `lockpicking`, so
+`pick_vault` is a tool for her and she never needs the murals. Sister Wen has `lore` herself,
+so she is the one who reads them and the player never has to.
+
+It runs the other way too. The sealed door on the landing needs `force`, which only Brakka
+has — with Wen or Ilke the player shoulders it open themselves, untrained, at DC +2. No
+companion's sheet can seal a room.
 
 Cooperation here is structural rather than encouraged. Nobody is being polite; the tools
 genuinely aren't there.
@@ -129,13 +135,14 @@ for.
 ## Architecture
 
 ```
-src/game/sheet.ts      taxonomy, gates, validation, speech tools
+src/game/sheet.ts      taxonomy, disposition gates, validation of model output
 src/game/presets.ts    three hand-authored characters
 src/game/world.ts      four rooms, props, exits, challenges, dice
 src/game/tools.ts      computeTools(sheet, room, flags) -> the desired tool set
 src/webmcp/registry.ts reconcile(desired): strike out, unregister, stamp in
-src/webmcp/context.ts  the document.modelContext wrapper
+src/webmcp/context.ts  document.modelContext, plus the local fallback
 src/agent/turn.ts      getTools -> chat -> executeTool loop
+src/game/*.check.ts    npm run check — the two things worth guarding
 ```
 
 Three things in there are load-bearing and non-obvious:
@@ -151,12 +158,14 @@ the typed acts, which is the entire leak this project is about.
 a sentence of prose, because prose returned from an action tool is what the model paraphrases
 warmly on its way back out.
 
-The live tool count peaks at **12**, for Ilke on first entering the Long Hall — six speech
-acts, two examinable props, two exits, `pick_vault`, and `wait_for_moment`. Selection accuracy
-degrades past roughly twelve, which is the quiet way most WebMCP demos stop working well, so
-that is the ceiling and not a comfortable margin. What keeps it there: props capped at three
-per room, skills at five, speech acts at six, and examined props retiring their own tool, so
-the count falls as a room gets used. Every other character in every other room sits at 8-10.
+The live tool count peaks at **12** — Sister Wen in the Long Hall once the vault is open, and
+Ilke there too; Brakka tops out at 11. That is not an estimate: `npm run check` enumerates
+every character against every room against all 131,072 flag combinations, 393,216 cases, and
+fails the build if any of them exceeds twelve. Selection accuracy degrades past roughly that
+number, which is the quiet way most WebMCP demos stop working well, so twelve is a ceiling
+rather than a comfortable margin. What holds it there: props capped at three per room, skills
+at five, speech acts at six, and examined props retiring their own tool so the count falls as
+a room gets used.
 
 ## Chrome quirks worth knowing
 
