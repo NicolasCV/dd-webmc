@@ -3,15 +3,9 @@ import { ACT_NAMES } from '../game/sheet'
 import { setOwnTurn } from '../game/tools'
 import { MAX_STEPS, TURN_BUDGET, useGame } from '../store'
 import { callTool, listTools, toInputSchema } from '../webmcp/context'
+import { repair, type Msg } from './repair.ts'
 import { liveDefs, settled } from '../webmcp/registry'
 
-type ToolCall = { id: string; function: { name: string; arguments: string } }
-type Msg = {
-  role: 'system' | 'user' | 'assistant' | 'tool'
-  content?: string | null
-  tool_calls?: ToolCall[]
-  tool_call_id?: string
-}
 
 // Deliberately thin. The character does not live here — it lives in which tools are
 // registered and how they are described. This prompt only establishes that speech
@@ -28,6 +22,7 @@ const SYSTEM =
   'outside the fiction.'
 
 let history: Msg[] = [{ role: 'system', content: SYSTEM }]
+
 
 export const resetHistory = () => {
   history = [{ role: 'system', content: SYSTEM }]
@@ -68,7 +63,7 @@ export async function agentTurn(trigger: string) {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ messages: history, tools: registered.map(toOpenAITool) }),
+        body: JSON.stringify({ messages: repair(history), tools: registered.map(toOpenAITool) }),
         signal: AbortSignal.timeout(20_000),
       })
       if (!res.ok) throw new Error(`chat ${res.status}: ${await res.text()}`)
@@ -81,12 +76,14 @@ export async function agentTurn(trigger: string) {
       const calls = message.tool_calls ?? []
       if (calls.length === 0) break
 
+      // Every tool_call must get a tool message back, without exception. A throw in
+      // here used to leave the assistant message unanswered in history, and since
+      // history outlives the turn, every later request 400'd -- including the retry.
       for (const call of calls) {
-        const tool = registered.find((t) => t.name === call.function.name)
         let out: string
-        if (!tool) {
-          out = `ERROR. No tool named ${call.function.name} is registered.`
-        } else {
+        try {
+          const tool = registered.find((t) => t.name === call.function.name)
+          if (!tool) throw new Error(`no tool named ${call.function.name} is registered`)
           let args: unknown = {}
           try {
             args = JSON.parse(call.function.arguments || '{}')
@@ -94,6 +91,8 @@ export async function agentTurn(trigger: string) {
             /* malformed args reach the tool as {} */
           }
           out = await callTool(tool, args, liveDefs())
+        } catch (err) {
+          out = `ERROR. ${err instanceof Error ? err.message : String(err)}`
         }
         history.push({ role: 'tool', tool_call_id: call.id, content: out })
       }
