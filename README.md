@@ -151,9 +151,12 @@ the typed acts, which is the entire leak this project is about.
 a sentence of prose, because prose returned from an action tool is what the model paraphrases
 warmly on its way back out.
 
-The live tool count peaks at 10. Selection accuracy degrades past roughly 12, which is the
-quiet way most WebMCP demos stop working well; props are capped at three per room, examined
-props retire their own tool, skills at five, speech acts at six.
+The live tool count peaks at **12**, for Ilke on first entering the Long Hall — six speech
+acts, two examinable props, two exits, `pick_vault`, and `wait_for_moment`. Selection accuracy
+degrades past roughly twelve, which is the quiet way most WebMCP demos stop working well, so
+that is the ceiling and not a comfortable margin. What keeps it there: props capped at three
+per room, skills at five, speech acts at six, and examined props retiring their own tool, so
+the count falls as a room gets used. Every other character in every other room sits at 8-10.
 
 ## Chrome quirks worth knowing
 
