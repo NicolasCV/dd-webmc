@@ -2,7 +2,7 @@ import { useGame } from '../store'
 import type { WebMcpTool } from '../webmcp/context'
 import type { Sheet } from './sheet'
 import { speechTools } from './sheet'
-import type { Challenge, Prop, Room } from './world'
+import type { Challenge, Prop, Room, Skill } from './world'
 import { roll, rooms } from './world'
 
 const empty = { type: 'object', properties: {} } as const
@@ -21,16 +21,20 @@ const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   return line
 }
 
-// Failure has to be eventful or the dice are decoration. One shot, fired once, well
-// inside the turn budget -- the kill switch covers the rest.
+// Failure has to be eventful or the dice are decoration. Fires once, and waits for the
+// current turn to end rather than being swallowed by it -- the whole point is that the
+// companion reacts to this unprompted.
 function wakeSomething() {
-  setTimeout(async () => {
-    if (useGame.getState().halted) return
-    const heard = 'Two rooms down, something that had been still stops being still.'
-    useGame.getState().say('world', heard)
+  const heard = 'Two rooms down, something that had been still stops being still.'
+  const fire = async (tries = 0) => {
+    const g = useGame.getState()
+    if (g.halted || tries > 12) return
+    if (g.busy) return void setTimeout(() => void fire(tries + 1), 1000)
+    g.say('world', heard)
     const { agentTurn } = await import('../agent/turn')
     void agentTurn(`${heard} You both heard it.`)
-  }, 2500)
+  }
+  setTimeout(() => void fire(), 2500)
 }
 
 /** Untrained, and it shows. Exists so no room is ever sealed by the companion's sheet. */
@@ -93,7 +97,10 @@ const waitTool: WebMcpTool = {
   annotations: { readOnlyHint: true },
   // In our own panel the player's next line is already the trigger, so waiting here
   // would just stall the turn. External agents get the real blocking behaviour.
-  execute: async () => (ownTurn ? 'A quiet moment. Nothing yet.' : ((await nextEvent()) ?? 'A quiet moment. Nothing yet. Call again to keep waiting.')),
+  execute: async () => {
+    if (ownTurn) return 'A quiet moment. Nothing yet.'
+    return (await nextEvent()) ?? 'A quiet moment. Nothing yet. Call again to keep waiting.'
+  },
 }
 
 export const go = (to: string) => {
@@ -138,7 +145,7 @@ export const openExits = (room: Room, flags: string[]) =>
 export function computeTools(sheet: Sheet | null, roomId: string, flags: string[]): WebMcpTool[] {
   if (!sheet) return []
   const room = rooms[roomId]
-  const has = (skill: string) => sheet.skills.includes(skill as never)
+  const has = (skill: Skill) => sheet.skills.includes(skill)
   return [
     ...speechTools(sheet),
     ...(room.challenges ?? [])
