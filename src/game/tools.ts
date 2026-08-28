@@ -9,6 +9,9 @@ const empty = { type: 'object', properties: {} } as const
 
 const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   const g = useGame.getState()
+  // The tool stays registered for the length of the strike-out animation, so it can be
+  // called once more after it has already done its job.
+  if (c.gone && g.flags.includes(c.gone)) return `${c.id} → already done.`
   const r = roll(attrs[c.attr], c.dc + dcBump)
   const line = `${c.id} → ${r.ok ? 'OK' : 'FAIL'}. ${r.total} vs DC ${r.dc}. ${r.ok ? c.success : c.fail}`
   g.setRoll({ ...r, of: c.id })
