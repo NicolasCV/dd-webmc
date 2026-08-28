@@ -1,11 +1,34 @@
+import { speak } from '../audio'
 import { useGame } from '../store'
 import type { WebMcpTool } from '../webmcp/context'
 import type { Sheet } from './sheet'
-import { speechTools } from './sheet'
+import { gateOpen } from './sheet'
 import type { Challenge, Prop, Room, Skill } from './world'
 import { roll, rooms } from './world'
 
 const empty = { type: 'object', properties: {} } as const
+
+const textSchema = {
+  type: 'object',
+  properties: { text: { type: 'string', description: 'The line, in his voice. One or two sentences.' } },
+  required: ['text'],
+} as const
+
+const speechTools = (sheet: Sheet): WebMcpTool[] =>
+  sheet.speechActs
+    .filter((a) => gateOpen(a.name, sheet.disposition))
+    .map(({ name, description }) => ({
+      name,
+      description,
+      inputSchema: textSchema,
+      annotations: { readOnlyHint: false },
+      execute: (input) => {
+        const text = String((input as { text?: unknown }).text ?? '')
+        useGame.getState().say('companion', text, name)
+        speak(text, sheet.voice.ttsVoiceId)
+        return 'ok' // terse by design: prose here is what the model paraphrases warmly
+      },
+    }))
 
 const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   const g = useGame.getState()
