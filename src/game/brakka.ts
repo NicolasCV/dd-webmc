@@ -1,10 +1,14 @@
 import { useGame } from '../store'
+import type { Skill } from './world'
 import type { WebMcpTool } from '../webmcp/context'
 
+// No lore and no lockpicking, on purpose: the props those gate never become tools for
+// him, so the player has to be the one who reads. That asymmetry is the co-op loop.
 export const brakka = {
   name: 'Brakka',
   oneLine: 'gruff mercenary, allergic to sincerity',
   attributes: { str: 15, dex: 9, wis: 7, cha: 6 },
+  skills: ['force', 'intimidation', 'perception'] as Skill[],
 }
 
 const textSchema = {

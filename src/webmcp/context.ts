@@ -13,15 +13,6 @@ export const modelContext = (): ChromeModelContext | undefined =>
 
 export const supported = () => !!modelContext()
 
-export async function registerAll(tools: WebMcpTool[], signal: AbortSignal) {
-  const mc = modelContext()
-  if (!mc) return
-  for (const tool of tools) {
-    if (signal.aborted) return
-    await mc.registerTool(tool, { signal })
-  }
-}
-
 // Chrome 149-153 (and 154 for same-document tools) hand back a serialized string
 // where the spec now says object. Branch on typeof and guard the parse.
 export function toInputSchema(schema: RegisteredTool['inputSchema']): InputSchema | undefined {

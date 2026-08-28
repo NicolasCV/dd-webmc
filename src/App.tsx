@@ -1,17 +1,13 @@
 import { useEffect, useState } from 'react'
-import { speechActs } from './game/brakka'
 import { Chat } from './ui/Chat'
 import { Sheet } from './ui/Sheet'
-import { registerAll, supported } from './webmcp/context'
+import { supported } from './webmcp/context'
+import { startRegistry } from './webmcp/registry'
 
 export default function App() {
   const [hasWebMcp] = useState(supported)
 
-  useEffect(() => {
-    const ctrl = new AbortController()
-    void registerAll(speechActs, ctrl.signal)
-    return () => ctrl.abort()
-  }, [])
+  useEffect(startRegistry, [])
 
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl gap-6 p-6">

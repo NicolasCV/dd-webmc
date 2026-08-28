@@ -1,7 +1,8 @@
 import type { RegisteredTool } from '@mcp-b/webmcp-types'
-import { speechActNames, speechActs } from '../game/brakka'
+import { speechActNames } from '../game/brakka'
 import { MAX_STEPS, TURN_BUDGET, useGame } from '../store'
 import { callTool, listTools, toInputSchema } from '../webmcp/context'
+import { liveDefs, settled } from '../webmcp/registry'
 
 type ToolCall = { id: string; function: { name: string; arguments: string } }
 type Msg = {
@@ -78,10 +79,14 @@ export async function agentTurn(trigger: string) {
           } catch {
             /* malformed args reach the tool as {} */
           }
-          out = await callTool(tool, args, speechActs)
+          out = await callTool(tool, args, liveDefs())
         }
         history.push({ role: 'tool', tool_call_id: call.id, content: out })
       }
+
+      // A world tool may have changed the room, which changes the registry. Let the
+      // reconcile finish before the next step reads it.
+      await settled()
 
       // An utterance ends the turn. Without this the model keeps its remaining
       // steps and rephrases itself until the cap, which reads as babbling.
