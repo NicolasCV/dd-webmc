@@ -70,7 +70,7 @@ export function Chat() {
       </header>
 
       <div className="flex-1 space-y-3 overflow-y-auto py-4">
-        <p className="text-pencil">{room.description}</p>
+        {bubbles.length === 0 && <p className="text-pencil">{room.description}</p>}
         {bubbles.map((b) => (
           <p key={b.id} className={b.who === 'player' ? 'text-pencil' : ''}>
             {b.act && (
