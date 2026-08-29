@@ -1,5 +1,8 @@
 import { useGame } from './store.ts'
 
+/** The room, the dice and the dark. Never a party member's voice. */
+export const NARRATOR = 'fable'
+
 let playing: HTMLAudioElement | null = null
 let queue: Promise<void> = Promise.resolve()
 
@@ -22,7 +25,13 @@ async function play(text: string, voice: string) {
   playing = audio
   try {
     await audio.play()
-    await new Promise((r) => audio.addEventListener('ended', r, { once: true }))
+    // Waiting on 'ended' alone deadlocks the queue the first time stopAudio pauses a
+    // line mid-word -- mute, restart -- and every later line waits behind it forever.
+    await new Promise<void>((done) => {
+      for (const e of ['ended', 'pause', 'error']) {
+        audio.addEventListener(e, () => done(), { once: true })
+      }
+    })
   } finally {
     URL.revokeObjectURL(url)
     if (playing === audio) playing = null

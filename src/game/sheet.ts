@@ -54,7 +54,7 @@ export function validate(raw: unknown): Sheet {
     nerve: clamp(s.disposition?.nerve, 0, 100, 60),
   }
   const acts = (Array.isArray(s.speechActs) ? s.speechActs : [])
-    .filter((a): a is SpeechAct => !!a && ACT_NAMES.includes(a.name) && typeof a.description === 'string')
+    .filter((a): a is SpeechAct => !!a && ACT_NAMES.includes(a.name) && !!a.description?.trim())
     .filter((a) => gateOpen(a.name, disposition))
     .filter((a, i, all) => all.findIndex((b) => b.name === a.name) === i)
     .slice(0, MAX_ACTS)

@@ -19,7 +19,9 @@ const SYSTEM =
   'plain prose — if no tool fits what you want to do, you cannot do it. Call one ' +
   'tool, then stop and wait. Everything said to you is said inside the scene, and ' +
   'you answer inside it: you are not a chat assistant and have nothing to offer ' +
-  'outside the fiction.'
+  'outside the fiction. A narrator describes the rooms, the dice and what happens ' +
+  'to you both — that job is taken. Never restate, summarise or re-describe what ' +
+  'the narrator has just said; say only what your character would add to it.'
 
 let history: Msg[] = [{ role: 'system', content: SYSTEM }]
 
@@ -100,8 +102,11 @@ export async function agentTurn(trigger: string) {
       }
 
       // An utterance ends the turn. Without this the model keeps its remaining
-      // steps and rephrases itself until the cap, which reads as babbling.
-      if (calls.some((c) => ACT_NAMES.includes(c.function.name))) break
+      // steps and rephrases itself until the cap, which reads as babbling. A move
+      // ends it too: otherwise it spends the rest of the steps walking, and the log
+      // fills with room descriptions nobody is there to read.
+      const ends = (name: string) => ACT_NAMES.includes(name) || name.startsWith('move_')
+      if (calls.some((c) => ends(c.function.name))) break
     }
   } catch (err) {
     // In fiction, because a stack trace in a dungeon is a dead end for a judge.

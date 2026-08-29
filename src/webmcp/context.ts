@@ -28,8 +28,8 @@ export function toInputSchema(schema: RegisteredTool['inputSchema']): InputSchem
 export const listTools = (): Promise<RegisteredTool[]> => modelContext().getTools()
 
 /**
- * executeTool is an optional Chromium extension, not part of the standard
- * surface, so fall back to the local descriptor when it is absent.
+ * Older Chromium previews expose the registry without executeTool, so fall back to the
+ * local descriptor when it is absent -- but never when it is merely quiet.
  */
 export async function callTool(
   tool: RegisteredTool,
@@ -39,8 +39,12 @@ export async function callTool(
 ): Promise<string> {
   const mc = modelContext()
   if (mc.executeTool) {
+    // ponytail: JSON string per @mcp-b/webmcp-types@5.0.1 and shipped Chrome; spec #246
+    // takes an object, so pass args directly once the pinned types say object.
     const out = await mc.executeTool(tool, JSON.stringify(args ?? {}), { signal })
-    if (out !== null) return out
+    // null means the page navigated mid-call and the tool already ran. Reaching for the
+    // local copy here would roll the dice twice and say every line twice.
+    return out ?? 'ok'
   }
   const fallback = defs.find((t) => t.name === tool.name)
   if (!fallback) throw new Error(`no local tool named ${tool.name}`)
@@ -83,7 +87,7 @@ class LocalContext extends EventTarget {
 
   async executeTool(tool: { name: string }, inputArguments: string) {
     const def = this.tools.get(tool.name)
-    if (!def) return null
+    if (!def) throw new Error(`${tool.name} is not registered`)
     let args: unknown = {}
     try {
       args = JSON.parse(inputArguments || '{}')

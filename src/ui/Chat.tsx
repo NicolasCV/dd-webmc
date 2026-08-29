@@ -4,13 +4,14 @@ import { stopAudio } from '../audio'
 import { examineProp, go, openExits, playerAttempt, playerChallenges, unseenProps } from '../game/tools'
 import { rooms } from '../game/world'
 import { TURN_BUDGET, useGame } from '../store'
+import { Room } from './Room'
 
 type Bubble = { id: string | number; who: string; text: string; act?: string }
 
 /** A room name arrives as an act too; only tool names are snake_case. */
 const isToolName = (act: string) => act.includes('_')
 
-function Line({ b }: { b: Bubble }) {
+function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: string }) {
   if (b.who === 'player')
     return (
       <p className="rise pl-6 text-[15px] leading-relaxed text-pencil">
@@ -33,18 +34,19 @@ function Line({ b }: { b: Bubble }) {
   if (b.who === 'world')
     return (
       <p className="rise border-l-2 border-ink/15 pl-3 text-[14px] leading-relaxed text-pencil">
-        {b.act && <span className="mr-2 font-mono text-[11px] text-ink/45">{b.act}</span>}
-        {b.text}
+        <span className="mr-2 font-mono text-[11px] tracking-[0.14em] text-pencil/70 uppercase">
+          {b.act && mechanics ? b.act : 'narrator'}
+        </span>
+        <span className="italic">{b.text}</span>
       </p>
     )
 
   return (
     <p className="rise text-[17px] leading-[1.65]">
-      {b.act && (
-        <span className="mr-2 align-[0.1em] font-mono text-[10px] tracking-[0.14em] text-brass uppercase">
-          {b.act}
-        </span>
-      )}
+      <span className="mr-2 align-[0.1em] font-mono text-[10px] tracking-[0.14em] text-brass uppercase">
+        {name}
+        {b.act && mechanics && <span className="ml-2 text-ink/40">{b.act}</span>}
+      </span>
       {b.text}
     </p>
   )
@@ -53,7 +55,7 @@ function Line({ b }: { b: Bubble }) {
 export function Chat() {
   const [draft, setDraft] = useState('')
   const end = useRef<HTMLDivElement>(null)
-  const { sheet, bubbles, roomId, flags, turns, busy, halted, error, muted, say, halt, reset, leave, toggleMute } =
+  const { sheet, bubbles, roomId, flags, turns, busy, halted, error, muted, mechanics, say, halt, reset, leave, toggleMute, toggleMechanics } =
     useGame()
   const room = rooms[roomId]
 
@@ -115,7 +117,10 @@ export function Chat() {
             }}
             className={muted ? 'text-oxblood hover:underline' : 'text-brass hover:underline'}
           >
-            {muted ? 'muted' : 'voice on'}
+            {muted ? 'unmute' : 'mute'}
+          </button>
+          <button type="button" onClick={toggleMechanics} className="text-pencil hover:underline">
+            {mechanics ? 'hide tools' : 'show tools'}
           </button>
           <button type="button" onClick={halt} className="text-oxblood hover:underline">
             halt
@@ -129,11 +134,16 @@ export function Chat() {
         </div>
       </header>
 
+      <Room
+        disabled={busy || halted}
+        examine={(p) => act(`You examine ${p.label}. ${examineProp(p)}`)}
+      />
+
       <div className="scroll-paper flex min-h-0 flex-1 flex-col overflow-y-auto py-5 pr-1">
         <div className="mt-auto flex max-w-[64ch] flex-col gap-3.5">
           {bubbles.length === 0 && <p className="text-[15px] text-pencil">{room.description}</p>}
           {bubbles.map((b) => (
-            <Line key={b.id} b={b} />
+            <Line key={b.id} b={b} mechanics={mechanics} name={sheet?.name ?? 'them'} />
           ))}
           {busy && <p className="font-mono text-xs text-pencil">…</p>}
           {halted && <p className="font-mono text-xs text-oxblood">halted</p>}
@@ -159,7 +169,7 @@ export function Chat() {
             onClick={() => act(`You examine ${p.label}. ${examineProp(p)}`)}
             className={chip}
           >
-            examine_{p.id}
+            {mechanics ? `examine_${p.id}` : `look at ${p.label}`}
           </button>
         ))}
         {playerChallenges(room, sheet, flags).map((c) => (
@@ -170,7 +180,7 @@ export function Chat() {
             onClick={() => act(`You try it yourself. ${playerAttempt(c)}`)}
             className={chip}
           >
-            {c.id}
+            {mechanics ? c.id : c.id.replace(/_/g, ' ')}
           </button>
         ))}
         {openExits(room, flags).map((e) => (
@@ -181,7 +191,7 @@ export function Chat() {
             onClick={() => act(`You walk to ${rooms[e.to].name}. ${go(e.to)}`)}
             className={chip}
           >
-            move_{e.to}
+            {mechanics ? `move_${e.to}` : `go to ${rooms[e.to].name}`}
           </button>
         ))}
       </div>

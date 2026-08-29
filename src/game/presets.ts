@@ -33,7 +33,10 @@ export const presets: Sheet[] = [
           'State a fact and stop. No comfort, no encouragement, no interpretation ' +
           'of how anyone feels, and above all no softening clause on the end. You ' +
           'do not explain that fear is natural. You do not say it will be fine. ' +
-          'If a sentence could be read as reassurance, it is the wrong sentence.',
+          'If a sentence could be read as reassurance, it is the wrong sentence. ' +
+          'The fact is one you brought — something you know, or decided, or are ' +
+          'about to do. Never a read-back of what the room was just told: repeating ' +
+          'the description back at people is not stating a fact, it is filling air.',
       },
       {
         name: 'dismiss',
@@ -80,7 +83,10 @@ export const presets: Sheet[] = [
       },
       {
         name: 'state_flatly',
-        description: 'Give the fact. You do this when the fact is the kindest thing available.',
+        description:
+          'Give the fact. You do this when the fact is the kindest thing available. It ' +
+          'is a fact you carry — what you know, or have seen before — never a repeat ' +
+          'of what has just been described to everyone standing there.',
       },
       {
         name: 'insist',
@@ -127,7 +133,10 @@ export const presets: Sheet[] = [
       },
       {
         name: 'state_flatly',
-        description: 'Drop the patter and give them the fact. You do this rarely, which is what makes it land.',
+        description:
+          'Drop the patter and give them the fact. You do this rarely, which is what ' +
+          'makes it land. Your own fact, not a summary of what was just read out — ' +
+          'narrating the room back to the room is the opposite of landing.',
       },
       {
         name: 'refuse_flatly',

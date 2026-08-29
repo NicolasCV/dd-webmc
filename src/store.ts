@@ -16,8 +16,10 @@ export const TURN_BUDGET = 40
 type State = {
   sheet: Sheet | null
   muted: boolean
+  mechanics: boolean
   bubbles: Bubble[]
   roomId: string
+  visited: string[]
   flags: string[]
   striking: string[]
   lastRoll: (Roll & { of: string }) | null
@@ -27,6 +29,7 @@ type State = {
   error: string | null
   pick: (sheet: Sheet) => void
   toggleMute: () => void
+  toggleMechanics: () => void
   say: (who: Bubble['who'], text: string, act?: string) => void
   setFlag: (flag: string) => void
   enter: (roomId: string) => void
@@ -43,6 +46,7 @@ type State = {
 const fresh = {
   bubbles: [] as Bubble[],
   roomId: START,
+  visited: [START],
   flags: [] as string[],
   striking: [] as string[],
   lastRoll: null,
@@ -55,13 +59,16 @@ const fresh = {
 export const useGame = create<State>((set, get) => ({
   sheet: null,
   muted: false,
+  mechanics: true,
   ...fresh,
   pick: (sheet) => set({ sheet, ...fresh }),
   toggleMute: () => set((s) => ({ muted: !s.muted })),
+  toggleMechanics: () => set((s) => ({ mechanics: !s.mechanics })),
   say: (who, text, act) =>
     set((s) => ({ bubbles: [...s.bubbles, { id: crypto.randomUUID(), who, text, act }] })),
   setFlag: (flag) => set((s) => (s.flags.includes(flag) ? s : { flags: [...s.flags, flag] })),
-  enter: (roomId) => set({ roomId }),
+  enter: (roomId) =>
+    set((s) => ({ roomId, visited: s.visited.includes(roomId) ? s.visited : [...s.visited, roomId] })),
   setRoll: (lastRoll) => set({ lastRoll }),
   setStriking: (striking) => set({ striking }),
   spendTurn: () => set((s) => ({ turns: s.turns + 1 })),

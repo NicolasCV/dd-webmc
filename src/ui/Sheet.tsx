@@ -61,7 +61,7 @@ const Stat = ({ k, v }: { k: string; v: number }) => (
 
 export function Sheet() {
   const [tools, setTools] = useState<string[]>([])
-  const { sheet, striking, lastRoll } = useGame()
+  const { sheet, striking, lastRoll, mechanics } = useGame()
 
   // Read the live registry rather than tracking our own copy, so the sheet can
   // never disagree with what an agent actually sees.
@@ -111,19 +111,25 @@ export function Sheet() {
         </span>
       </h3>
       <ul className="min-h-0 flex-1 overflow-y-auto font-mono text-[13px] lg:min-h-[9rem]">
-        {tools.map((name) => (
-          <li
-            key={name}
-            className="stamp relative flex items-center gap-2 border-b border-ink/10 py-[5px] text-brass"
-          >
-            <span className="text-ink/30">▸</span>
-            <span className="relative">
-              {name}
-              {striking.includes(name) && <StrikeRule />}
-            </span>
-          </li>
-        ))}
-        {tools.length === 0 && <li className="py-1.5 text-pencil italic">nothing registered</li>}
+        {!mechanics && (
+          <li className="py-1.5 text-pencil italic">hidden — you find out by asking</li>
+        )}
+        {mechanics &&
+          tools.map((name) => (
+            <li
+              key={name}
+              className="stamp relative flex items-center gap-2 border-b border-ink/10 py-[5px] text-brass"
+            >
+              <span className="text-ink/30">▸</span>
+              <span className="relative">
+                {name}
+                {striking.includes(name) && <StrikeRule />}
+              </span>
+            </li>
+          ))}
+        {mechanics && tools.length === 0 && (
+          <li className="py-1.5 text-pencil italic">nothing registered</li>
+        )}
       </ul>
 
       <p className="mt-4 shrink-0 border-t border-ink/25 pt-3 font-mono text-[11px]">

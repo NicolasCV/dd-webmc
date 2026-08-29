@@ -35,7 +35,11 @@ async function run(desired: WebMcpTool[]) {
   }
 }
 
-export const reconcile = (desired: WebMcpTool[]) => (queue = queue.then(() => run(desired)))
+// A rejected registerTool -- empty description, duplicate name, tools=() policy -- must
+// not poison the chain: every later reconcile would be skipped and settled() would throw
+// on every turn after it, with nothing registered and no way back.
+export const reconcile = (desired: WebMcpTool[]) =>
+  (queue = queue.then(() => run(desired)).catch((err) => console.error('registry', err)))
 
 /**
  * Registration is driven straight off world state, not from a React effect — the

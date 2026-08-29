@@ -49,6 +49,15 @@ body {
 }
 .sheet > * { position: relative; z-index: 1; }
 
+/* Stands in for a room plate that has not been drawn yet. */
+.hatch {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--color-ink) 8%, transparent) 0 1px,
+    transparent 1px 7px
+  );
+}
+
 /* An engraved plate tipped into the page, not a UI avatar. */
 .plate {
   filter: sepia(0.22) contrast(1.06);

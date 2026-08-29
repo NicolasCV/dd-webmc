@@ -1,4 +1,4 @@
-import { speak } from '../audio.ts'
+import { NARRATOR, speak } from '../audio.ts'
 import { useGame } from '../store.ts'
 import type { WebMcpTool } from '../webmcp/context'
 import type { Sheet } from './sheet.ts'
@@ -39,6 +39,7 @@ const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   const line = `${c.id} → ${r.ok ? 'OK' : 'FAIL'}. ${r.total} vs DC ${r.dc}. ${r.ok ? c.success : c.fail}`
   g.setRoll({ ...r, of: c.id })
   g.say('world', line)
+  speak(r.ok ? c.success : c.fail, NARRATOR)
   const flag = r.ok ? c.sets : c.failSets
   if (flag && !g.flags.includes(flag)) {
     g.setFlag(flag)
@@ -57,6 +58,7 @@ function wakeSomething() {
     if (g.halted || tries > 12) return
     if (g.busy) return void setTimeout(() => void fire(tries + 1), 1000)
     g.say('world', heard)
+    speak(heard, NARRATOR)
     const { agentTurn } = await import('../agent/turn')
     void agentTurn(`${heard} You both heard it.`)
   }
@@ -74,6 +76,7 @@ export const playerChallenges = (room: Room, sheet: Sheet | null, flags: string[
 export const examineProp = (p: Prop) => {
   const g = useGame.getState()
   g.say('world', p.onExamine, `examine_${p.id}`)
+  speak(p.onExamine, NARRATOR)
   if (p.reveals) g.setFlag(p.reveals)
   g.setFlag(seen(p))
   return p.onExamine
@@ -135,6 +138,7 @@ export const go = (to: string) => {
   g.enter(to)
   g.setRoll(null)
   g.say('world', room.description, room.name)
+  speak(`${room.name}. ${room.description}`, NARRATOR)
   return `move_${to} → OK. ${room.name}.`
 }
 
