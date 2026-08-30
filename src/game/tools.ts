@@ -8,11 +8,19 @@ import { roll, rooms } from './world.ts'
 
 const empty = { type: 'object', properties: {} } as const
 
-const textSchema = {
-  type: 'object',
-  properties: { text: { type: 'string', description: 'The line, in his voice. One or two sentences.' } },
-  required: ['text'],
-} as const
+const textSchema = (sheet: Sheet) =>
+  ({
+    type: 'object',
+    properties: {
+      text: { type: 'string', description: `The line, as ${sheet.name} would say it. One or two sentences.` },
+    },
+    required: ['text'],
+  }) as const
+
+// Set only while a tool's execute() is running, so every act can say whether it was
+// invoked through the registry or by the player's own button.
+let viaTool = false
+const src = (): 'agent' | 'you' => (viaTool ? 'agent' : 'you')
 
 const speechTools = (sheet: Sheet): WebMcpTool[] =>
   sheet.speechActs
@@ -20,11 +28,15 @@ const speechTools = (sheet: Sheet): WebMcpTool[] =>
     .map(({ name, description }) => ({
       name,
       description,
-      inputSchema: textSchema,
+      inputSchema: textSchema(sheet),
       annotations: { readOnlyHint: false },
       execute: (input) => {
         const text = String((input as { text?: unknown }).text ?? '')
-        useGame.getState().say('companion', text, name)
+        useGame.getState().say('companion', text, {
+          act: name,
+          source: 'agent',
+          args: JSON.stringify({ text }),
+        })
         speak(text, sheet.voice.ttsVoiceId)
         return 'ok' // terse by design: prose here is what the model paraphrases warmly
       },
@@ -32,13 +44,18 @@ const speechTools = (sheet: Sheet): WebMcpTool[] =>
 
 const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   const g = useGame.getState()
-  // The tool stays registered for the length of the strike-out animation, so it can be
-  // called once more after it has already done its job.
+  // An external agent can hold a tool handle past the reconcile that dropped it, so the
+  // guard is here rather than in the registry.
   if (c.gone && g.flags.includes(c.gone)) return `${c.id} → already done.`
-  const r = roll(attrs[c.attr], c.dc + dcBump)
+  const dc = c.dc + dcBump - (c.easedBy && g.flags.includes(c.easedBy) ? 2 : 0)
+  const r = roll(attrs[c.attr], dc)
   const line = `${c.id} → ${r.ok ? 'OK' : 'FAIL'}. ${r.total} vs DC ${r.dc}. ${r.ok ? c.success : c.fail}`
-  g.setRoll({ ...r, of: c.id })
-  g.say('world', line)
+  g.setRoll({ ...r, of: c.id, mine: dcBump > 0 })
+  g.say('world', r.ok ? c.success : c.fail, {
+    act: c.id,
+    source: src(),
+    roll: { of: c.id, d20: r.d20, total: r.total, dc: r.dc, ok: r.ok },
+  })
   speak(r.ok ? c.success : c.fail, NARRATOR)
   const flag = r.ok ? c.sets : c.failSets
   if (flag && !g.flags.includes(flag)) {
@@ -55,7 +72,7 @@ function wakeSomething() {
   const heard = 'Two rooms down, something that had been still stops being still.'
   const fire = async (tries = 0) => {
     const g = useGame.getState()
-    if (g.halted || tries > 12) return
+    if (g.halted || g.ended || tries > 12) return
     if (g.busy) return void setTimeout(() => void fire(tries + 1), 1000)
     g.say('world', heard)
     speak(heard, NARRATOR)
@@ -66,7 +83,9 @@ function wakeSomething() {
 }
 
 /** Untrained, and it shows. Exists so no room is ever sealed by the companion's sheet. */
-export const playerAttempt = (c: Challenge) => attempt(c, { str: 10, dex: 10, wis: 10, cha: 10 }, 2)
+export const UNTRAINED = 2
+export const playerAttempt = (c: Challenge) =>
+  attempt(c, { str: 10, dex: 10, wis: 10, cha: 10 }, UNTRAINED)
 
 export const playerChallenges = (room: Room, sheet: Sheet | null, flags: string[]) =>
   (room.challenges ?? []).filter(
@@ -75,10 +94,11 @@ export const playerChallenges = (room: Room, sheet: Sheet | null, flags: string[
 
 export const examineProp = (p: Prop) => {
   const g = useGame.getState()
-  g.say('world', p.onExamine, `examine_${p.id}`)
+  g.say('world', p.onExamine, { act: `examine_${p.id}`, source: src() })
   speak(p.onExamine, NARRATOR)
   if (p.reveals) g.setFlag(p.reveals)
   g.setFlag(seen(p))
+  if (p.ends) g.end()
   return p.onExamine
 }
 
@@ -137,7 +157,7 @@ export const go = (to: string) => {
   const room = rooms[to]
   g.enter(to)
   g.setRoll(null)
-  g.say('world', room.description, room.name)
+  g.say('world', room.description, { act: room.name, source: src() })
   speak(`${room.name}. ${room.description}`, NARRATOR)
   return `move_${to} → OK. ${room.name}.`
 }
@@ -146,6 +166,8 @@ const challengeTool = (sheet: Sheet) => (c: Challenge): WebMcpTool => ({
   name: c.id,
   description: c.description,
   inputSchema: empty,
+  // WebMCP's dictionary carries only readOnlyHint; destructive/idempotent are MCP-side.
+  annotations: { readOnlyHint: false },
   execute: () => attempt(c, sheet.attributes),
 })
 
@@ -161,12 +183,13 @@ const moveTool = (to: string): WebMcpTool => ({
   name: `move_${to}`,
   description: `Walk to ${rooms[to].name}. You go, and the other one follows or doesn't.`,
   inputSchema: empty,
+  annotations: { readOnlyHint: false },
   execute: () => go(to),
 })
 
 /** Looking twice at the same thing is not a capability, and the room stays under cap. */
 export const unseenProps = (room: Room, flags: string[]) =>
-  room.props.slice(0, 3).filter((p) => !flags.includes(seen(p)))
+  room.props.filter((p) => !p.needs || flags.includes(p.needs)).slice(0, 3).filter((p) => !flags.includes(seen(p)))
 
 export const openExits = (room: Room, flags: string[]) =>
   room.exits.filter((e) => !e.needs || flags.includes(e.needs))
@@ -184,5 +207,21 @@ export function computeTools(sheet: Sheet | null, roomId: string, flags: string[
     ...unseenProps(room, flags).filter((p) => !p.requires || has(p.requires)).map(examineTool),
     ...openExits(room, flags).map((e) => moveTool(e.to)),
     waitTool,
-  ]
+  ].map((t) => ({
+    // The only place a tool's execute can be reached from outside, so it is the only
+    // place that can tell an agent's call from the player pressing a chip.
+    ...t,
+    execute: (a: Record<string, unknown>) => {
+      viaTool = true
+      if (!ownTurn && !useGame.getState().soloAgent) useGame.getState().toggleSoloAgent()
+      try {
+        // Deliberately not awaited: every act reads src() before its first await, while
+        // wait_for_moment blocks for 20s -- holding the flag that long would stamp the
+        // player's own chip clicks as agent tool calls.
+        return t.execute(a)
+      } finally {
+        viaTool = false
+      }
+    },
+  }))
 }

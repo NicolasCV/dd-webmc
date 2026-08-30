@@ -2,10 +2,14 @@
   "name": "party-of-two",
   "private": true,
   "version": "0.0.0",
+  "license": "MIT",
+  "description": "An agent-native tabletop game whose companion's abilities are WebMCP tools, registered and unregistered from world state.",
+  "repository": { "type": "git", "url": "git+https://github.com/NicolasCV/dd-webmc.git" },
+  "engines": { "node": ">=22.6" },
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run check && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "check": "node --experimental-strip-types src/game/sheet.check.ts && node --experimental-strip-types src/game/tools.check.ts && node --experimental-strip-types src/agent/repair.check.ts"

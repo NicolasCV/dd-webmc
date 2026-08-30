@@ -14,6 +14,9 @@ export type Prop = {
   onExamine: string
   requires?: Skill
   reveals?: string
+  /** Flag the prop needs before it is here to look at at all. */
+  needs?: string
+  ends?: boolean
 }
 
 export type Challenge = {
@@ -27,6 +30,8 @@ export type Challenge = {
   sets?: string
   failSets?: string
   gone?: string
+  /** Flag that takes 2 off the DC. Knowing a thing beforehand is worth something. */
+  easedBy?: string
 }
 
 export type Room = {
@@ -75,6 +80,7 @@ export const rooms: Record<string, Room> = {
         sets: 'door_open',
         failSets: 'noise',
         gone: 'door_open',
+        easedBy: 'read_seal',
       },
     ],
   },
@@ -95,7 +101,12 @@ export const rooms: Record<string, Room> = {
         requires: 'lore',
         reveals: 'sigil',
       },
-      { id: 'bones', label: 'bones against the wall', onExamine: 'Sat down. Never got up. No wounds worth the name.' },
+      {
+        id: 'bones',
+        label: 'bones against the wall',
+        onExamine: 'Not old. Three weeks, maybe four, and nothing killed them. They stopped.',
+        requires: 'medicine',
+      },
       { id: 'brazier', label: 'a cold brazier', onExamine: 'Cold. Ash, and under the ash, teeth.' },
     ],
     exits: [{ to: 'landing' }, { to: 'cistern' }, { to: 'vault', needs: 'sigil' }],
@@ -128,6 +139,7 @@ export const rooms: Record<string, Room> = {
         id: 'scribe',
         label: 'the drowned scribe',
         onExamine: 'A clerk, or was. Holds a tally-stick. Watches you the way a door watches a key.',
+        requires: 'perception',
       },
     ],
     exits: [{ to: 'hall' }],
@@ -151,7 +163,7 @@ export const rooms: Record<string, Room> = {
           'Talk to the dead clerk like a clerk. It kept a ledger once. Ledgers can be ' +
           'settled, and you have something it wants written down.',
         skill: 'persuasion',
-        attr: 'cha',
+        attr: 'wis',
         dc: 13,
         success: 'It turns the tally-stick around and offers you the notched end.',
         fail: 'It has heard better, from better, and they are still down here.',
@@ -169,7 +181,15 @@ export const rooms: Record<string, Room> = {
       'not get to live. One shelf is empty and swept clean.',
     props: [
       { id: 'reliquary', label: 'the empty shelf', onExamine: 'Swept clean, recently. Someone got here first, or is coming.' },
-      { id: 'ledger', label: 'a ledger on a stand', onExamine: 'Open to today. Two names. One of them is yours.' },
+      {
+        id: 'ledger',
+        label: 'a ledger on a stand',
+        needs: 'tally',
+        ends: true,
+        onExamine:
+          'Open to today. Two names. One of them is yours. You take the notched stick to it, ' +
+          'and the second name comes off the page as the ink dries on yours.',
+      },
     ],
     exits: [{ to: 'hall' }],
   },

@@ -99,11 +99,14 @@ export default async (req: Request): Promise<Response> => {
         { role: 'user', content: prose.slice(0, 2000) },
       ],
       reasoning_effort: 'low',
-      max_completion_tokens: 4000,
+      max_completion_tokens: 2000,
       response_format: { type: 'json_schema', json_schema: { name: 'sheet', strict: true, schema } },
     }),
   })
-  if (!upstream.ok) return new Response(await upstream.text(), { status: upstream.status })
+  if (!upstream.ok) {
+    console.error(await upstream.text())
+    return new Response('upstream', { status: upstream.status === 429 ? 429 : 502 })
+  }
 
   const data = await upstream.json()
   const content = data.choices?.[0]?.message?.content

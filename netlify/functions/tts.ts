@@ -22,7 +22,10 @@ export default async (req: Request): Promise<Response> => {
       response_format: 'mp3',
     }),
   })
-  if (!upstream.ok) return new Response(await upstream.text(), { status: upstream.status })
+  if (!upstream.ok) {
+    console.error(await upstream.text())
+    return new Response('upstream', { status: upstream.status === 429 ? 429 : 502 })
+  }
 
   return new Response(upstream.body, {
     headers: { 'content-type': 'audio/mpeg', 'cache-control': 'no-store' },

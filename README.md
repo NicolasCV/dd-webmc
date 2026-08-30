@@ -1,11 +1,25 @@
 # Party of Two
 
+**Play it:** <deploy URL — fill in before submitting>
+
 An agent-native tabletop game. You play one character; an AI agent plays the other.
 Its abilities are [WebMCP](https://github.com/webmachinelearning/webmcp) tools, registered
 and unregistered from world state, so it is *structurally* incapable of acting outside its
 character — including in what it can say.
 
 > **A character is a set of registered tools. Change the character, change the API.**
+
+---
+
+## Take the agent's seat
+
+Open the page in Chrome 149+ with `chrome://flags/#enable-webmcp-testing`, or in ChatGPT's
+in-app browser. The page registers up to twelve tools on `document.modelContext`. Tell your
+agent: *"You are the companion in this tab. Play the character using the page's tools, and
+call `wait_for_moment` when you have finished acting."* Then open the brass registry button
+in the masthead — `document.modelContext · 12` — and switch the built-in model off, so your
+agent is the only thing driving the companion. The first tool call from outside switches it
+off on its own.
 
 ---
 
@@ -71,12 +85,13 @@ a description that failed to say what the act is not** — see [What leaked](#wh
 ## Unregistration is a narrative event
 
 The right-hand panel is not a debug view. It is the companion's character sheet, and it
-updates during play. When a tool goes away it is not faded out — it is struck through with a
-hand-drawn oxblood rule, held for 900ms so the loss registers, and only then unregistered.
+updates during play. When a tool goes away it is not faded out — it is unregistered at once,
+so a stale handle can never be called, and struck through with a hand-drawn oxblood rule that
+outlives it by 1100ms so the loss registers.
 
 *This was possible a moment ago and now it isn't.* Nobody needs a legend for that.
 
-![examine_bones being struck through on the capability sheet](docs/strike.png)
+<!-- still to shoot: one frame from the 1100ms strike window, cropped to the right-hand panel -->
 
 Walk into the next room and the whole set turns over: the props you could examine are gone,
 the exits are different, and the door you just shouldered open has taken `force_door` with
@@ -102,7 +117,8 @@ companion's sheet can seal a room.
 Cooperation here is structural rather than encouraged. Nobody is being polite; the tools
 genuinely aren't there.
 
-![the three preset characters](docs/start.png)
+![the landing: three preset characters, each card showing what it registers and what its
+disposition closes](docs/start.png)
 
 A judge who works on agent platforms sees `state_flatly` set in mono on a hand-ruled sheet
 and has the whole idea before reading a word of this file. Fiction renders in serif, anything
@@ -118,7 +134,8 @@ Best in Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled, or lau
 **Without the flag it still plays.** A missing `document.modelContext` falls back to the same
 contract backed by a `Map`, so the game, the reconciler and the sheet all behave identically
 and only the part that genuinely needs the browser — an outside agent discovering the tools —
-is missing. A banner says so. A dead page demonstrates nothing.
+is missing. The masthead and the sheet both name which registry is in use, so the difference is
+stated rather than hidden. A dead page demonstrates nothing.
 
 ```sh
 npm install
@@ -139,7 +156,7 @@ src/game/sheet.ts      taxonomy, disposition gates, validation of model output
 src/game/presets.ts    three hand-authored characters
 src/game/world.ts      four rooms, props, exits, challenges, dice
 src/game/tools.ts      computeTools(sheet, room, flags) -> the desired tool set
-src/webmcp/registry.ts reconcile(desired): strike out, unregister, stamp in
+src/webmcp/registry.ts reconcile(desired): unregister, strike out, stamp in
 src/webmcp/context.ts  document.modelContext, plus the local fallback
 src/agent/turn.ts      getTools -> chat -> executeTool loop
 src/game/*.check.ts    npm run check — the three things worth guarding
@@ -162,11 +179,11 @@ warmly on its way back out.
 The live tool count peaks at **12** — Sister Wen in the Long Hall once the vault is open, and
 Ilke there too; Brakka tops out at 11. That is not an estimate: `npm run check` enumerates
 every character against every room against all 32,768 flag combinations — 393,216 cases, and
-fails the build if any of them exceeds twelve. Selection accuracy degrades past roughly that
-number, which is the quiet way most WebMCP demos stop working well, so twelve is a ceiling
-rather than a comfortable margin. What holds it there: props capped at three per room, skills
-at five, speech acts at six, and examined props retiring their own tool so the count falls as
-a room gets used.
+fails the build if any of them exceeds twelve — it is the first thing `npm run build`
+runs. Selection accuracy degrades past roughly that number, which is the quiet way most
+WebMCP demos stop working well, so twelve is a ceiling rather than a comfortable margin.
+What holds it there: props capped at three per room, skills at five, speech acts at six, and
+examined props retiring their own tool so the count falls as a room gets used.
 
 ## Chrome quirks worth knowing
 
@@ -312,6 +329,11 @@ not override the model's own behaviour about being a model: `state_flatly` can b
 "I am not a person" whatever its description says. The frame clause in the shared system
 prompt asks for the scene to be treated as the whole world; that is a prompt, and it has a
 prompt's reliability.
+
+The deployed `/api/chat` is an unauthenticated proxy to OpenAI on my key. It caps message
+count, payload size and tool count, but the real mitigation is a hard monthly spend limit on
+the key, set in the OpenAI dashboard, and that is mine to set rather than something the code
+can enforce.
 
 And within an act, the description is still load-bearing. Every leak found so far got through
 a description that forgot to say what the act is not — see [What leaked](#what-leaked). The

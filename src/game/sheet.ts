@@ -8,12 +8,12 @@ export type Disposition = { warmth: number; nerve: number }
 
 /** Six families. Which ones a disposition opens is the whole mechanic. */
 export const FAMILIES = {
-  assert: { acts: ['state_flatly', 'insist'], gate: () => true },
-  deflect: { acts: ['change_subject', 'dismiss'], gate: () => true },
-  refuse: { acts: ['refuse_flatly'], gate: () => true },
-  provoke: { acts: ['mock', 'threaten', 'goad'], gate: (d: Disposition) => d.nerve > 50 },
-  support: { acts: ['reassure', 'encourage', 'apologize'], gate: (d: Disposition) => d.warmth > 60 },
-  disclose: { acts: ['admit_fear', 'share_memory'], gate: (d: Disposition) => d.warmth > 75 },
+  assert:   { acts: ['state_flatly', 'insist'],             stat: 'nerve',  min: -1 },
+  deflect:  { acts: ['change_subject', 'dismiss'],          stat: 'nerve',  min: -1 },
+  refuse:   { acts: ['refuse_flatly'],                      stat: 'nerve',  min: -1 },
+  provoke:  { acts: ['mock', 'threaten', 'goad'],           stat: 'nerve',  min: 50 },
+  support:  { acts: ['reassure', 'encourage', 'apologize'], stat: 'warmth', min: 60 },
+  disclose: { acts: ['admit_fear', 'share_memory'],         stat: 'warmth', min: 75 },
 } as const
 
 export const ACT_NAMES = Object.values(FAMILIES).flatMap((f) => f.acts as readonly string[])
@@ -21,7 +21,12 @@ export const ACT_NAMES = Object.values(FAMILIES).flatMap((f) => f.acts as readon
 const familyOf = (act: string) =>
   Object.entries(FAMILIES).find(([, f]) => (f.acts as readonly string[]).includes(act))?.[1]
 
-export const gateOpen = (act: string, d: Disposition) => familyOf(act)?.gate(d) ?? false
+export const familyOpen = (f: { stat: 'warmth' | 'nerve'; min: number }, d: Disposition) => d[f.stat] > f.min
+
+export const gateOpen = (act: string, d: Disposition) => {
+  const f = familyOf(act)
+  return f ? familyOpen(f, d) : false
+}
 
 export type SpeechAct = { name: string; description: string }
 

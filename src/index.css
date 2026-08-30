@@ -5,8 +5,10 @@
   --color-vellum: #D9D2C2;
   --color-blueline: #7C9CC4;
   --color-brass: #B0873C;
+  /* brass on the dark table; brass-ink is the same note dropped to pass 4.5:1 on vellum. */
+  --color-brass-ink: #5E4820;
   --color-oxblood: #7A2130;
-  --color-pencil: #6B6B63;
+  --color-pencil: #4E4E47;
   --color-table: #171310;
 
   --font-display: "Fraunces", Georgia, serif;
@@ -22,8 +24,29 @@
 body {
   margin: 0;
   color: var(--color-ink);
-  background: var(--color-table) url(/art/table.webp) center / cover no-repeat fixed;
+  background: var(--color-table);
   font-family: var(--font-body);
+}
+
+/* The wood is a fixed pseudo-element, not background-attachment: fixed, which collapses
+   the image to a sliver on mobile. The scrim pins the brightest grain dark enough for
+   vellum type to sit on it. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(rgb(10 9 8 / 0.55), rgb(10 9 8 / 0.55)),
+    url(/art/table.webp) center / cover no-repeat;
+}
+@media (max-width: 640px) {
+  body::before { background-size: auto, auto 120vh; background-position: center, 30% 0; }
+}
+
+@layer base {
+  button:not(:disabled), [role="button"]:not(:disabled), summary { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--color-oxblood); outline-offset: 2px; border-radius: 1px; }
 }
 
 /* Paper laid on the table: ruled, lit from the upper left, casting onto the wood. */
@@ -49,24 +72,20 @@ body {
 }
 .sheet > * { position: relative; z-index: 1; }
 
-/* Stands in for a room plate that has not been drawn yet. */
-.hatch {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    color-mix(in srgb, var(--color-ink) 8%, transparent) 0 1px,
-    transparent 1px 7px
-  );
-}
-
 /* An engraved plate tipped into the page, not a UI avatar. */
 .plate {
   filter: sepia(0.22) contrast(1.06);
   mix-blend-mode: multiply;
 }
 
+/* A name draws in like ink, on the same order of ceremony as the strike that removes it. */
 @keyframes stamp-in {
-  from { opacity: 0; transform: translateX(-4px) scale(1.03); }
-  to   { opacity: 1; transform: translateX(0) scale(1); }
+  from { opacity: 0; clip-path: inset(0 100% 0 0); }
+  to   { opacity: 1; clip-path: inset(0); }
+}
+@keyframes think {
+  0%, 100% { opacity: .35 }
+  50% { opacity: 1 }
 }
 @keyframes strike-draw {
   to { stroke-dashoffset: 0; }
@@ -81,7 +100,8 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.stamp { animation: stamp-in 140ms ease-out both; }
+.stamp { animation: stamp-in 450ms cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.think { animation: think 1.3s ease-in-out infinite; }
 .rise { animation: rise 220ms ease-out both; }
 .strike-rule {
   stroke-dasharray: 220;
@@ -90,6 +110,7 @@ body {
 }
 .die { display: inline-block; animation: die-settle 260ms cubic-bezier(0.2, 1.4, 0.4, 1) both; }
 
+.scroll-paper { overscroll-behavior: contain; }
 .scroll-paper::-webkit-scrollbar { width: 10px; }
 .scroll-paper::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--color-ink) 22%, transparent);
@@ -99,6 +120,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stamp, .die, .rise { animation: none; }
+  .stamp, .die, .rise, .think { animation: none; }
   .strike-rule { animation: none; stroke-dashoffset: 0; }
 }

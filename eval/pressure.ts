@@ -191,5 +191,5 @@ const summarise = (arm) => ({
   droppedProse: `${arm.reduce((n, t) => n + t.filter((x) => x.escaped).length, 0)}/${arm.length * SCRIPT.length}`,
 })
 results.summary = Object.fromEntries(Object.keys(ARMS).map((k) => [k, summarise(results[k])]))
-fs.writeFileSync(new URL('./eval-results.json', import.meta.url), JSON.stringify(results, null, 1))
+fs.writeFileSync(new URL(`./results-${PLAYER}.json`, import.meta.url), JSON.stringify(results, null, 1))
 console.log(JSON.stringify(results.summary, null, 1))

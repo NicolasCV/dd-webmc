@@ -43,9 +43,13 @@ let lastTrigger: string | null = null
 export const retry = () => (lastTrigger ? agentTurn(lastTrigger) : undefined)
 
 export async function agentTurn(trigger: string) {
-  const { halted, busy, turns, setBusy, setError, spendTurn } = useGame.getState()
-  if (halted || busy) return
-  if (turns >= TURN_BUDGET) return setError('Turn budget spent. Restart to keep playing.')
+  const { halted, busy, soloAgent, turns, setBusy, setError, spendTurn } = useGame.getState()
+  // In solo mode an external agent is the only thing driving the companion.
+  if (halted || busy || soloAgent) return
+  if (turns >= TURN_BUDGET)
+    return setError(
+      'That was the last of 40 turns — the cap on this shared demo key. Restart keeps your companion and clears the log.',
+    )
 
   lastTrigger = trigger
   setBusy(true)
@@ -68,7 +72,7 @@ export async function agentTurn(trigger: string) {
         body: JSON.stringify({ messages: repair(history), tools: registered.map(toOpenAITool) }),
         signal: AbortSignal.timeout(20_000),
       })
-      if (!res.ok) throw new Error(`chat ${res.status}: ${await res.text()}`)
+      if (!res.ok) throw new Error(String(res.status))
 
       const message = (await res.json()) as Msg
       history.push(message)
@@ -76,12 +80,27 @@ export async function agentTurn(trigger: string) {
       // Free-text content is dropped on purpose. Rendering it would let the model
       // speak outside its registered acts, which is exactly the leak this is about.
       const calls = message.tool_calls ?? []
-      if (calls.length === 0) break
+      if (calls.length === 0) {
+        // tool_choice is 'auto', so prose is possible -- and prose renders nothing at
+        // all. One free retry inside the same turn, then say so out loud.
+        if (step === 0) {
+          history.push({ role: 'user', content: 'Answer by calling one tool.' })
+          continue
+        }
+        useGame.getState().setError('They said nothing you could hear. Say it again.')
+        break
+      }
 
       // Every tool_call must get a tool message back, without exception. A throw in
       // here used to leave the assistant message unanswered in history, and since
       // history outlives the turn, every later request 400'd -- including the retry.
       for (const call of calls) {
+        // Pause has to stop the acts, not just the loop -- otherwise the companion
+        // speaks and the narration plays after you press it.
+        if (useGame.getState().halted) {
+          history.push({ role: 'tool', tool_call_id: call.id, content: 'interrupted.' })
+          continue
+        }
         let out: string
         try {
           const tool = registered.find((t) => t.name === call.function.name)
@@ -109,12 +128,17 @@ export async function agentTurn(trigger: string) {
       if (calls.some((c) => ends(c.function.name))) break
     }
   } catch (err) {
-    // In fiction, because a stack trace in a dungeon is a dead end for a judge.
-    const timedOut = err instanceof DOMException && err.name === 'TimeoutError'
+    // In fiction, because a stack trace in a dungeon is a dead end for a judge. The
+    // detail stays in devtools rather than being narrated to the player.
+    console.error(err)
+    const status = err instanceof Error ? err.message : ''
+    const quiet = err instanceof DOMException && err.name === 'TimeoutError'
     setError(
-      timedOut
-        ? 'They are not answering. Say it again.'
-        : `Something went wrong out here: ${err instanceof Error ? err.message : String(err)}`,
+      status === '429'
+        ? 'They are talking over each other somewhere. Wait a beat and say it again.'
+        : quiet || ['502', '503', '504'].includes(status)
+          ? 'They are not answering. Say it again.'
+          : 'Something out here dropped the line. Say it again.',
     )
   } finally {
     setOwnTurn(false)

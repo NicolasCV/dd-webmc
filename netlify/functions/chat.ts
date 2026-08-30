@@ -15,6 +15,11 @@ export default async (req: Request): Promise<Response> => {
 
   const { messages, tools } = (await req.json()) as { messages: unknown; tools: unknown[] }
 
+  // Open proxy on the owner's key: bound it well above real play (the game's own ceiling is 12 tools).
+  if (!Array.isArray(messages) || messages.length > 80 || JSON.stringify(messages).length > 60_000)
+    return new Response('too large', { status: 413 })
+  if (Array.isArray(tools) && tools.length > 14) return new Response('too many tools', { status: 413 })
+
   const upstream = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
@@ -27,7 +32,10 @@ export default async (req: Request): Promise<Response> => {
     }),
   })
 
-  if (!upstream.ok) return new Response(await upstream.text(), { status: upstream.status })
+  if (!upstream.ok) {
+    console.error(await upstream.text())
+    return new Response('upstream', { status: upstream.status === 429 ? 429 : 502 })
+  }
 
   const data = await upstream.json()
   return Response.json(data.choices?.[0]?.message ?? { role: 'assistant', content: '' })

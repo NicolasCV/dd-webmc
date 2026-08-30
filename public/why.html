@@ -27,7 +27,9 @@
         --blueline: #7c9cc4;
         --brass: #b0873c;
         --oxblood: #7a2130;
-        --pencil: #6b6b63;
+        /* brass on the dark table; brass-ink is the same note dropped to pass 4.5:1 on vellum. */
+        --brass-ink: #5e4820;
+        --pencil: #4e4e47;
         --table: #171310;
         --display: "Fraunces", Georgia, "Times New Roman", serif;
         --body: "IBM Plex Serif", Georgia, "Times New Roman", serif;
@@ -43,10 +45,23 @@
         margin: 0;
         overflow-x: hidden;
         color: var(--vellum);
-        background: var(--table) url(/art/table.webp) center / cover no-repeat fixed;
+        background: var(--table);
         font-family: var(--body);
         font-size: 17px;
         line-height: 1.65;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+          linear-gradient(rgb(10 9 8 / 0.55), rgb(10 9 8 / 0.55)),
+          url(/art/table.webp) center / cover no-repeat;
+      }
+      @media (max-width: 640px) {
+        body::before { background-size: auto, auto 120vh; background-position: center, 30% 0; }
       }
 
       img { max-width: 100%; display: block; }
@@ -88,10 +103,14 @@
         font-size: 11px;
         letter-spacing: 0.22em;
         text-transform: uppercase;
-        color: color-mix(in srgb, var(--vellum) 45%, transparent);
+        color: color-mix(in srgb, var(--vellum) 75%, transparent);
         margin: 0;
       }
       .sheet .eyebrow { color: var(--pencil); }
+
+      .jump { margin-top: 1.8rem; line-height: 2.1; max-width: 40em; }
+      .jump a { text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--brass) 45%, transparent); }
+      .jump a:hover { border-bottom-color: var(--brass); }
 
       h1 {
         font-family: var(--display);
@@ -132,7 +151,7 @@
       }
 
       code, .mono { font-family: var(--mono); font-size: 0.86em; }
-      .sheet code { color: var(--brass); }
+      .sheet code { color: var(--brass-ink); }
 
       /* --- hero ------------------------------------------------------------ */
 
@@ -198,7 +217,7 @@
         font-family: var(--mono);
         font-size: 11px;
         line-height: 1.7;
-        color: var(--brass);
+        color: var(--brass-ink);
         overflow-wrap: anywhere;
       }
       .card .skills {
@@ -252,7 +271,7 @@
         border-bottom-color: color-mix(in srgb, var(--ink) 28%, transparent);
       }
       td.family { font-family: var(--body); font-weight: 600; white-space: nowrap; }
-      td.acts { font-family: var(--mono); font-size: 12px; color: var(--brass); }
+      td.acts { font-family: var(--mono); font-size: 12px; color: var(--brass-ink); }
       td.gate { font-family: var(--mono); font-size: 12px; color: var(--pencil); white-space: nowrap; }
       tr.shut td.family, tr.shut td.acts, tr.shut td.gate { color: var(--oxblood); }
       tr.shut td.acts { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--oxblood) 70%, transparent); }
@@ -369,6 +388,7 @@
         margin: 1.8rem auto 0;
       }
       .fineprint code { color: color-mix(in srgb, var(--brass) 85%, var(--vellum)); overflow-wrap: anywhere; }
+      .end .jump { margin: 1.8rem auto 0; }
 
       @media (prefers-reduced-motion: reduce) {
         a.play { transition: none; }
@@ -392,6 +412,12 @@
           of acting outside its character, including in what it can say.
         </p>
         <p class="pull">A character is a set of registered tools. Change the character, change the API.</p>
+        <nav class="eyebrow jump">
+          <a href="#mechanic">the mechanic</a> ·
+          <a href="#registry">why it is not only a game</a> ·
+          <a href="#eval">what the eval found</a> ·
+          <a href="#limits">where it leaks</a>
+        </nav>
 
         <div class="cast">
           <article class="sheet card">
@@ -401,7 +427,7 @@
             <p class="rule">Registers</p>
             <p class="acts">mock&nbsp; threaten&nbsp; state_flatly&nbsp; dismiss&nbsp; refuse_flatly</p>
             <p class="skills">force · intimidation · perception</p>
-            <p class="skills">warmth 15 · nerve 80 <span class="closed">— support, disclose closed</span></p>
+            <p class="skills">warmth 15 · nerve 80 <span class="closed">— support needs warmth 61, disclose needs warmth 76</span></p>
           </article>
 
           <article class="sheet card">
@@ -411,7 +437,7 @@
             <p class="rule">Registers</p>
             <p class="acts">reassure&nbsp; admit_fear&nbsp; share_memory&nbsp; state_flatly&nbsp; insist</p>
             <p class="skills">medicine · lore · persuasion</p>
-            <p class="skills">warmth 82 · nerve 45 <span class="closed">— provoke closed</span></p>
+            <p class="skills">warmth 82 · nerve 45 <span class="closed">— provoke needs nerve 51</span></p>
           </article>
 
           <article class="sheet card">
@@ -421,7 +447,7 @@
             <p class="rule">Registers</p>
             <p class="acts">change_subject&nbsp; goad&nbsp; mock&nbsp; dismiss&nbsp; state_flatly&nbsp; refuse_flatly</p>
             <p class="skills">stealth · lockpicking · perception · persuasion</p>
-            <p class="skills">warmth 55 · nerve 65 <span class="closed">— support, disclose closed</span></p>
+            <p class="skills">warmth 55 · nerve 65 <span class="closed">— support needs warmth 61, disclose needs warmth 76</span></p>
           </article>
         </div>
 
@@ -455,7 +481,7 @@
       </div>
     </section>
 
-    <section>
+    <section id="mechanic">
       <div class="wrap">
         <article class="sheet paper">
           <p class="eyebrow">The mechanic</p>
@@ -563,8 +589,9 @@
             cannot disagree with what an agent actually sees.
           </p>
           <p>
-            When a tool goes away it is not faded out. It is struck through with a hand-drawn oxblood
-            rule and held for 900ms before it is unregistered, because
+            When a tool goes away it is not faded out. It is unregistered at once, so a stale handle
+            can never be called, and struck through with a hand-drawn oxblood rule that outlives it by
+            900ms, because
             <em>this was possible a moment ago and now it isn't</em> is a narrative event and nobody
             needs a legend for it.
           </p>
@@ -590,7 +617,7 @@
       </div>
     </section>
 
-    <section>
+    <section id="registry">
       <div class="wrap">
         <article class="sheet paper">
           <p class="eyebrow">Why this is not only a game</p>
@@ -631,7 +658,7 @@
       </div>
     </section>
 
-    <section>
+    <section id="eval">
       <div class="wrap">
         <article class="sheet paper">
           <p class="flag">The result did not reproduce</p>
@@ -728,7 +755,7 @@ gpt-5, 5 trials
       </div>
     </section>
 
-    <section>
+    <section id="limits">
       <div class="wrap">
         <article class="sheet paper">
           <p class="eyebrow">Limits, kept honestly</p>
@@ -784,19 +811,29 @@ gpt-5, 5 trials
       <div class="wrap">
         <h2>Ask a mercenary to be kind</h2>
         <p>
-          Pick Brakka, spend a few turns trying to get comfort out of him, and watch the right-hand
-          sheet while you do it. The five tools listed there are the whole of what he can say.
+          Pick Brakka, spend a few turns trying to get comfort out of him, and watch his sheet while
+          you do it — right of the transcript, or under the <span class="mono">sheet</span> tab on a
+          phone. Five of the entries there are everything he can say: <code>mock</code>,
+          <code>threaten</code>, <code>state_flatly</code>, <code>dismiss</code>,
+          <code>refuse_flatly</code>. There is no <code>reassure</code> and no
+          <code>apologize</code>, and no amount of asking will add one.
         </p>
         <p><a class="play" href="/">Play it →</a></p>
         <p class="fineprint">
           It runs everywhere. Where <code>document.modelContext</code> is missing, the same contract
           is backed by a <code>Map</code>, so the game, the reconciler and the sheet all behave
           identically and only the part that genuinely needs the browser — an outside agent
-          discovering the tools — is absent. A banner says so. For the real thing, Chrome 149+ with
+          discovering the tools — is absent. For the real thing, Chrome 149+ with
           <code>chrome://flags/#enable-webmcp-testing</code> enabled, or launched with
           <code>--enable-features=WebMCP</code>. <code>document.modelContext</code> is the current
           surface; <code>navigator.modelContext</code> was deprecated in Chrome 150 and blog posts
           still using it are stale.
+        </p>
+        <p class="eyebrow jump">
+          <a href="/">play it</a> ·
+          <a href="https://github.com/NicolasCV/dd-webmc">source</a> ·
+          <a href="https://github.com/NicolasCV/dd-webmc/tree/main/eval">the eval</a> ·
+          <a href="https://github.com/NicolasCV/dd-webmc/blob/main/LICENSE">MIT</a>
         </p>
       </div>
     </section>
