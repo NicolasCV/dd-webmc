@@ -187,7 +187,7 @@ export function Room() {
                 vectorEffect="non-scaling-stroke"
               />
 
-              {/* ponytail: marks, not controls — the chip row is the labelled, thumb-sized path to the same action. */}
+              {/* Marks, not controls — the chip row is the labelled, thumb-sized path to the same action. */}
               {seen && (
                 <g aria-hidden className="pointer-events-none">
                   {marks(rooms[id], flags).map((p, i, all) => (

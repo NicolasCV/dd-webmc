@@ -7,12 +7,9 @@ import { repair, type Msg } from './repair.ts'
 import { liveDefs, settled } from '../webmcp/registry'
 
 
-// Deliberately thin. The character does not live here — it lives in which tools are
-// registered and how they are described. This prompt only establishes that speech
-// happens through tools at all.
-// Frame only. Who the character is lives entirely in which tools are registered and
-// how they are described -- nothing here describes a personality, and nothing here
-// tells the model to stay in character.
+// Frame only. Who the character is lives in which tools are registered and how they
+// are described -- nothing here names a personality or tells the model to stay in
+// character. This only establishes that speech happens through tools at all.
 const SYSTEM =
   'You are a character in a tabletop scene, playing opposite one human player. ' +
   'You act and speak only by calling the tools available to you. Never reply in ' +

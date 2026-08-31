@@ -39,7 +39,7 @@ export async function callTool(
 ): Promise<string> {
   const mc = modelContext()
   if (mc.executeTool) {
-    // ponytail: JSON string per @mcp-b/webmcp-types@5.0.1 and shipped Chrome; spec #246
+    // JSON string per @mcp-b/webmcp-types@5.0.1 and shipped Chrome; spec #246
     // takes an object, so pass args directly once the pinned types say object.
     const out = await mc.executeTool(tool, JSON.stringify(args ?? {}), { signal })
     // null means the page navigated mid-call and the tool already ran. Reaching for the
