@@ -24,14 +24,13 @@ export default function App() {
   useEffect(() => {
     const mc = modelContext()
     const refresh = () => void listTools().then(setTools)
-    // A document.modelContext injected after first paint arrives empty: move the
-    // registrations across before reading it, or the sheet reports a registry of nothing.
+    // modelContext injected after first paint starts empty: resync before listing, or tools read as none.
     void resync().then(refresh)
     mc.addEventListener('toolchange', refresh)
     return () => mc.removeEventListener('toolchange', refresh)
   }, [live])
 
-  // The in-app browser and the extension can inject document.modelContext after first paint.
+  // In-app browser and extension inject document.modelContext late, after first paint.
   useEffect(() => {
     if (live) return
     const id = setInterval(() => {
@@ -54,7 +53,6 @@ export default function App() {
 
   return (
     <div className={started ? 'flex h-[100dvh] flex-col' : 'flex min-h-[100dvh] flex-col'}>
-      {/* Below sm the masthead is one row: wordmark and the registry, which opens everything else. */}
       <header className="mx-auto flex w-full max-w-[1400px] shrink-0 flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 pt-3 pb-2 sm:pt-5 sm:pb-3 lg:px-10">
         <a href="/" className="font-display text-lg tracking-tight text-vellum/90">
           Party of Two

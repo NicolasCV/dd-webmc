@@ -1,6 +1,6 @@
 export const config = { path: '/api/tts' }
 
-// tts-1 rather than the HD model: this is a demo, and latency matters more than fidelity.
+// tts-1, not HD: latency matters more than fidelity for a demo.
 const MODEL = process.env.TTS_MODEL ?? 'tts-1'
 const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
 

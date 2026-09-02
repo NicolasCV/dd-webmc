@@ -14,7 +14,7 @@ export type Prop = {
   onExamine: string
   requires?: Skill
   reveals?: string
-  /** Flag the prop needs before it is here to look at at all. */
+  /** Prop stays hidden until flags include this. */
   needs?: string
   ends?: boolean
 }
@@ -30,7 +30,7 @@ export type Challenge = {
   sets?: string
   failSets?: string
   gone?: string
-  /** Flag that takes 2 off the DC. Knowing a thing beforehand is worth something. */
+  /** Flag that lowers the DC by 2. */
   easedBy?: string
 }
 

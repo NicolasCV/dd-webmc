@@ -6,7 +6,6 @@ export const SKILLS: Skill[] = [
 
 export type Disposition = { warmth: number; nerve: number }
 
-/** Six families. Which ones a disposition opens is the whole mechanic. */
 export const FAMILIES = {
   assert:   { acts: ['state_flatly', 'insist'],             stat: 'nerve',  min: -1 },
   deflect:  { acts: ['change_subject', 'dismiss'],          stat: 'nerve',  min: -1 },
@@ -48,10 +47,7 @@ const clamp = (n: unknown, lo: number, hi: number, fallback: number) =>
 
 const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
 
-/**
- * A player who asks for a god that can do everything must come back with a legal
- * sheet, not forty tools. Everything below is a hard cap, not a suggestion.
- */
+/** Trust boundary: only gate on model-authored sheets. Caps below are hard. */
 export function validate(raw: unknown): Sheet {
   const s = (raw ?? {}) as Partial<Sheet>
   const disposition = {
@@ -77,8 +73,7 @@ export function validate(raw: unknown): Sheet {
       .filter((k) => SKILLS.includes(k))
       .filter((k, i, all) => all.indexOf(k) === i)
       .slice(0, MAX_SKILLS),
-    // A character with no way to speak is a dead end, so fall back to the one act
-    // every disposition permits.
+    // Fallback needs state_flatly open at every disposition: keep assert.min below 0.
     speechActs: acts.length ? acts : [{ name: 'state_flatly', description: 'State a fact and stop.' }],
     disposition,
     voice: {

@@ -11,11 +11,9 @@ const ok: Msg[] = [
 ]
 assert.deepEqual(repair(ok), ok, 'a well-formed transcript is untouched')
 
-// The actual failure: callTool threw, so the assistant message never got its answer.
 const orphanCall: Msg[] = [...ok.slice(0, 2), { role: 'assistant', tool_calls: call('b') }]
 assert.deepEqual(repair(orphanCall), ok.slice(0, 2), 'unanswered tool_calls dropped')
 
-// Two calls, only one answered -- the whole assistant message and its half-answer go.
 const halfAnswered: Msg[] = [
   ...ok.slice(0, 2),
   { role: 'assistant', tool_calls: [...call('c'), ...call('d')] },
@@ -28,7 +26,7 @@ assert.ok(!repair(halfAnswered).some((m) => m.role === 'tool'), 'no tool message
 const orphanTool: Msg[] = [...ok.slice(0, 2), { role: 'tool', tool_call_id: 'zz', content: 'ok' }]
 assert.deepEqual(repair(orphanTool), ok.slice(0, 2), 'stray tool message dropped')
 
-// Every surviving tool message must follow a surviving assistant message that claims it.
+// Every surviving tool message follows a surviving assistant message that claims it.
 const mixed: Msg[] = [...ok, { role: 'assistant', tool_calls: call('e') }, { role: 'user', content: 'next' }]
 const out = repair(mixed)
 assert.deepEqual(out, [...ok, { role: 'user', content: 'next' }], 'good turns survive alongside a bad one')

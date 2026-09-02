@@ -8,7 +8,7 @@ export type Bubble = {
   who: 'player' | 'companion' | 'world'
   act?: string
   text: string
-  /** Who invoked the tool: the LLM/external agent, or the player's own button. */
+  /** Tool caller: external agent, or the player's own button. */
   source?: 'agent' | 'you'
   args?: string
   roll?: { of: string; d20: number; total: number; dc: number; ok: boolean }

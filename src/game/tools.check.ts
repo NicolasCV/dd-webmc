@@ -1,6 +1,4 @@
-// node --experimental-strip-types src/game/tools.check.ts
-// Selection accuracy degrades past roughly twelve live tools, so the composition rules
-// get a guard: every character, every room, every reachable combination of flags.
+// Tool selection degrades past ~12 live tools, hence CEILING.
 import assert from 'node:assert/strict'
 import { presets } from './presets.ts'
 import { computeTools } from './tools.ts'

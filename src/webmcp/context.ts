@@ -5,7 +5,7 @@ import type {
   RegisteredTool,
 } from '@mcp-b/webmcp-types'
 
-/** registerTool's overloads all require inputSchema to be present, not optional. */
+/** registerTool overloads all require inputSchema. */
 export type WebMcpTool = ModelContextTool & { inputSchema: InputSchema }
 
 export const supported = () => !!(document.modelContext as ChromeModelContext | undefined)
@@ -13,8 +13,7 @@ export const supported = () => !!(document.modelContext as ChromeModelContext | 
 export const modelContext = (): ChromeModelContext =>
   (document.modelContext as ChromeModelContext | undefined) ?? local
 
-// Chrome 149-153 (and 154 for same-document tools) hand back a serialized string
-// where the spec now says object. Branch on typeof and guard the parse.
+// Chrome 149-153 (154 for same-document tools) returns inputSchema as a serialized string, not an object.
 export function toInputSchema(schema: RegisteredTool['inputSchema']): InputSchema | undefined {
   if (!schema) return undefined
   if (typeof schema !== 'string') return schema
@@ -27,10 +26,7 @@ export function toInputSchema(schema: RegisteredTool['inputSchema']): InputSchem
 
 export const listTools = (): Promise<RegisteredTool[]> => modelContext().getTools()
 
-/**
- * Older Chromium previews expose the registry without executeTool, so fall back to the
- * local descriptor when it is absent -- but never when it is merely quiet.
- */
+/** Older Chromium has no executeTool. Fall back to the local tool only when it is absent. */
 export async function callTool(
   tool: RegisteredTool,
   args: unknown,
@@ -39,11 +35,9 @@ export async function callTool(
 ): Promise<string> {
   const mc = modelContext()
   if (mc.executeTool) {
-    // JSON string per @mcp-b/webmcp-types@5.0.1 and shipped Chrome; spec #246
-    // takes an object, so pass args directly once the pinned types say object.
+    // executeTool takes a JSON string in @mcp-b/webmcp-types@5.0.1 and shipped Chrome; spec #246 says object.
     const out = await mc.executeTool(tool, JSON.stringify(args ?? {}), { signal })
-    // null means the page navigated mid-call and the tool already ran. Reaching for the
-    // local copy here would roll the dice twice and say every line twice.
+    // null means the page navigated mid-call and the tool already ran. Do not retry it locally.
     return out ?? 'ok'
   }
   const fallback = defs.find((t) => t.name === tool.name)
@@ -51,12 +45,7 @@ export async function callTool(
   return String(await fallback.execute(args as Record<string, unknown>))
 }
 
-/**
- * Most people opening this will not have the Chrome flag on, and a red banner over a
- * dead page demonstrates nothing. This is the same contract backed by a Map: the game
- * plays, the sheet still reads the registry rather than a copy, and only the part that
- * needs the browser -- an outside agent discovering the tools -- is missing.
- */
+/** Map-backed fallback when the browser has no document.modelContext. An outside agent cannot discover these tools. */
 class LocalContext extends EventTarget {
   private tools = new Map<string, WebMcpTool>()
 

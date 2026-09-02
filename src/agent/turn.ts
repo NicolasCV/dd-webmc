@@ -7,9 +7,7 @@ import { repair, type Msg } from './repair.ts'
 import { liveDefs, settled } from '../webmcp/registry'
 
 
-// Frame only. Who the character is lives in which tools are registered and how they
-// are described -- nothing here names a personality or tells the model to stay in
-// character. This only establishes that speech happens through tools at all.
+// no personality here on purpose: the registered tools and their descriptions make the character
 const SYSTEM =
   'You are a character in a tabletop scene, playing opposite one human player. ' +
   'You act and speak only by calling the tools available to you. Never reply in ' +
@@ -59,8 +57,7 @@ export async function agentTurn(trigger: string) {
     for (let step = 0; step < MAX_STEPS; step++) {
       if (useGame.getState().halted) break
 
-      // The registry may still be swapping tools out from under us -- on a room change,
-      // or on the first turn after a character is picked. Read it only once it is settled.
+      // registry swaps tools on room change and on first character pick; read after it settles
       await settled()
       const registered = await listTools()
       const res = await fetch('/api/chat', {
@@ -74,12 +71,10 @@ export async function agentTurn(trigger: string) {
       const message = (await res.json()) as Msg
       history.push(message)
 
-      // Free-text content is dropped on purpose. Rendering it would let the model
-      // speak outside its registered acts, which is exactly the leak this is about.
+      // message.content is dropped on purpose: prose lets the model act outside its registered tools
       const calls = message.tool_calls ?? []
       if (calls.length === 0) {
-        // tool_choice is 'auto', so prose is possible -- and prose renders nothing at
-        // all. One free retry inside the same turn, then say so out loud.
+        // server sends tool_choice 'auto', so a reply with no tool call happens; retry once
         if (step === 0) {
           history.push({ role: 'user', content: 'Answer by calling one tool.' })
           continue
@@ -88,12 +83,9 @@ export async function agentTurn(trigger: string) {
         break
       }
 
-      // Every tool_call must get a tool message back, without exception. A throw in
-      // here used to leave the assistant message unanswered in history, and since
-      // history outlives the turn, every later request 400'd -- including the retry.
+      // every tool_call needs a tool message back; history outlives the turn, so a gap 400s later requests
       for (const call of calls) {
-        // Pause has to stop the acts, not just the loop -- otherwise the companion
-        // speaks and the narration plays after you press it.
+        // halt must skip the remaining calls, not only the loop, or acts run after pause
         if (useGame.getState().halted) {
           history.push({ role: 'tool', tool_call_id: call.id, content: 'interrupted.' })
           continue
@@ -106,27 +98,20 @@ export async function agentTurn(trigger: string) {
           try {
             args = JSON.parse(call.function.arguments || '{}')
           } catch {
-            /* malformed args reach the tool as {} */
           }
           out = await callTool(tool, args, liveDefs())
         } catch (err) {
-          // Same shape as a failed roll, so it reads as a fact about the world rather
-          // than as a system error the companion then narrates to the player.
+          // same shape as a failed roll, so the model reads a world fact, not a system error
           out = `${call.function.name} → ${err instanceof Error ? err.message : String(err)}.`
         }
         history.push({ role: 'tool', tool_call_id: call.id, content: out })
       }
 
-      // An utterance ends the turn. Without this the model keeps its remaining
-      // steps and rephrases itself until the cap, which reads as babbling. A move
-      // ends it too: otherwise it spends the rest of the steps walking, and the log
-      // fills with room descriptions nobody is there to read.
+      // stop after a speech act or a move, or the model rephrases itself until the step cap
       const ends = (name: string) => ACT_NAMES.includes(name) || name.startsWith('move_')
       if (calls.some((c) => ends(c.function.name))) break
     }
   } catch (err) {
-    // In fiction, because a stack trace in a dungeon is a dead end for a judge. The
-    // detail stays in devtools rather than being narrated to the player.
     console.error(err)
     const status = err instanceof Error ? err.message : ''
     const quiet = err instanceof DOMException && err.name === 'TimeoutError'

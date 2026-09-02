@@ -2,11 +2,6 @@ import { rooms, type Room } from '../game/world'
 import { unseenProps } from '../game/tools'
 import { useGame } from '../store'
 
-/**
- * One grid, one room size: landing—hall—vault in a line, the cistern under the hall.
- * Columns 5/117/229, rows 6/76, every box 86x54 — so the plan has a spine, and the
- * only thing that is hand-drawn about it is the wobble on the corners.
- */
 const W = 86
 const H = 54
 const MAP: Record<string, [number, number]> = {
@@ -21,11 +16,7 @@ const sketch = (x: number, y: number, k: number) =>
   `M${x + wob(k, 0)} ${y + wob(k, 1)} L${x + W + wob(k, 2)} ${y + wob(k, 3)} ` +
   `L${x + W + wob(k, 4)} ${y + H + wob(k, 5)} L${x + wob(k, 6)} ${y + H + wob(k, 7)} Z`
 
-/**
- * Keyed by the two room ids sorted, so an exit drawn from both ends is drawn once.
- * `rail` is the centre line, run 2 units into each room so the walls always meet it;
- * `label` is where the flag name hangs, out in the empty band between the two rows.
- */
+// Key is both room ids sorted, so ways() finds the same exit from either end.
 const WAYS: Record<string, { rail: [number, number, number, number]; label: [number, number] }> = {
   'hall|landing': { rail: [89, 33, 119, 33], label: [104, 70] },
   'hall|vault': { rail: [201, 33, 231, 33], label: [216, 70] },
@@ -42,7 +33,6 @@ const ways = () => {
   return [...seen]
 }
 
-/** The props the room actually offers right now, and whether each is still unexamined. */
 const marks = (r: Room, flags: string[]) => {
   const unseen = unseenProps(r, flags)
   return r.props
@@ -51,7 +41,6 @@ const marks = (r: Room, flags: string[]) => {
     .map((p) => ({ id: p.id, unseen: unseen.includes(p) }))
 }
 
-/** "The Vault of Small Hours" is a title; a map wants a name that fits the room. */
 const short = (name: string) => name.replace(/^The /, '').replace(/ of .*/, '')
 
 const row = 'flex items-baseline justify-between gap-3 border-b border-ink/10 py-[3px]'
@@ -187,7 +176,7 @@ export function Room() {
                 vectorEffect="non-scaling-stroke"
               />
 
-              {/* Marks, not controls — the chip row is the labelled, thumb-sized path to the same action. */}
+              {/* Decorative only: the chip row is the labelled control for the same action. */}
               {seen && (
                 <g aria-hidden className="pointer-events-none">
                   {marks(rooms[id], flags).map((p, i, all) => (
@@ -242,7 +231,6 @@ export function Room() {
             const seen = visited.includes(r.id)
             return (
               <li key={r.id} className={row}>
-                {/* A room name is fiction, so it is serif here as it is everywhere else. */}
                 <span
                   className={`font-body text-[11px] ${current ? 'text-oxblood' : seen ? 'text-ink' : 'text-pencil/55'}`}
                 >

@@ -42,12 +42,10 @@ function Monogram({ name, className = '' }: { name: string; className?: string }
   )
 }
 
-/** Engraved plate where we have one; a hand-lettered initial where we don't. */
 export function Portrait({ name, className = '' }: { name: string; className?: string }) {
   const src = PLATES[name]
   if (!src) return <Monogram name={name} className={`${className} text-3xl`} />
-  // The vellum ground is the plate's backdrop: .sheet > * isolates every child, so
-  // mix-blend-mode: multiply has nothing to multiply against without it.
+  // bg-vellum is the blend backdrop: .sheet > * makes a stacking context, so .plate multiply stays inside.
   return (
     <div className={`shrink-0 overflow-hidden bg-vellum ${className}`}>
       <img src={src} alt="" className="plate size-full object-cover object-top" />
@@ -63,20 +61,17 @@ const Stat = ({ k, v }: { k: string; v: number }) => (
 )
 
 export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; className?: string }) {
-  // '' is the closed state, so the first tool can open by default and still be closed.
+  // null = first tool open; '' = closed by user; name = that tool open.
   const [open, setOpen] = useState<string | null>(null)
   const { sheet, striking, lastRoll, mechanics } = useGame()
 
   if (!sheet) return null
   const shown = open ?? tools[0]?.name
-  // A struck name has already left the registry, so it cannot be drawn over a live row --
-  // it is drawn from `striking` alone, for the beat it takes to read that it is gone.
+  // striking is the only source for struck rows; the filter stops a double row while the registry catches up.
   const live = tools.filter((t) => !striking.includes(t.name))
   const closed = Object.entries(FAMILIES).filter(([, f]) => !familyOpen(f, sheet.disposition))
   const withheld = closed.reduce((n, [, f]) => n + f.acts.length, 0)
 
-  // Shrinks on mobile, where it is one pane of a 100dvh column: the tool list scrolls
-  // rather than the paper running off the bottom of the screen.
   return (
     <aside className={`sheet w-full min-h-0 flex-col p-5 lg:w-[25rem] lg:shrink-0 lg:p-7 ${className}`}>
       <div className="flex items-start gap-4">
@@ -115,7 +110,6 @@ export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; clas
         </p>
       )}
 
-      {/* The fade lands on blank paper when the list is short, and on a half-row when it is not. */}
       <ul
         aria-live="polite"
         className="scroll-paper min-h-0 flex-1 overflow-y-auto lg:min-h-[9rem]"
@@ -165,8 +159,6 @@ export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; clas
         )}
       </ul>
 
-      {/* The acts the disposition never opened: the confinement, itemised, with its price.
-          Pinned below the scroller -- withheld is the argument, not a footnote you scroll to. */}
       {mechanics && withheld > 0 && (
         <ul className="shrink-0 border-t border-ink/25 pt-1">
           {closed.flatMap(([fam, f]) =>
@@ -194,7 +186,7 @@ export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; clas
       >
         {lastRoll ? (
           <span key={`${lastRoll.of}-${lastRoll.d20}`}>
-            {/* Drawn, not typed: U+2684 is absent from the loaded faces and renders as tofu. */}
+            {/* Drawn, not typed: U+2684 is absent from the loaded fonts and renders as tofu. */}
             <svg className="die mr-2 size-4 align-[-0.28em]" viewBox="0 0 16 16" aria-hidden>
               <rect
                 x="1"

@@ -8,7 +8,7 @@ import type { Bubble } from '../store'
 import { TURN_BUDGET, useGame } from '../store'
 import { Room } from './Room'
 
-/** A move labels its bubble with the room it opens; every other act is a tool name. */
+/** move() sets Bubble.act to the room name; every other act is a tool name. */
 const isRoomName = (act: string) => Object.values(rooms).some((r) => r.name === act)
 
 function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: string }) {
@@ -90,16 +90,14 @@ export function Chat({ className = '' }: { className?: string }) {
   const over = ended || turns >= TURN_BUDGET
   const locked = busy || halted || over
 
-  // A judge should not have to type first. agentTurn no-ops while busy, so React's
-  // double-invoked effects in development cannot double-greet.
+  // StrictMode double-invokes this effect; agentTurn no-ops while busy, so no double greeting.
   useEffect(() => {
     if (sheet && bubbles.length === 0) {
       void agentTurn(`You are both at the bottom of the stairs. ${rooms[roomId].description} Say something.`)
     }
   }, [sheet, roomId, bubbles.length])
 
-  // Stuck to the newest line until the reader scrolls up himself; coming back releases it.
-  // Distance from the bottom cannot tell a reader who scrolled away from one who never scrolled.
+  // Unstick on upward scroll. Distance from bottom cannot tell who scrolled away from who never scrolled.
   const stuck = useRef(true)
   const lastTop = useRef(0)
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -128,8 +126,6 @@ export function Chat({ className = '' }: { className?: string }) {
     void agentTurn(text)
   }
 
-  // The player's own actions are events he reacts to, which is what makes this a party
-  // rather than a chat window.
   const act = (narration: string) => {
     if (locked) return
     void agentTurn(narration)
@@ -238,7 +234,6 @@ export function Chat({ className = '' }: { className?: string }) {
         className="scroll-paper flex max-h-[55dvh] min-h-0 flex-1 flex-col overflow-y-auto py-5 pr-1 lg:max-h-none"
       >
         <div className="mx-auto flex w-full max-w-[44rem] flex-col gap-5">
-          {/* The opening scene stays at the head of the page; later rooms arrive as their own bubbles. */}
           <p className="text-[15px] leading-relaxed text-pencil">{rooms[START].description}</p>
           {bubbles.length === 0 && (
             <>

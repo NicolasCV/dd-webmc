@@ -1,5 +1,4 @@
-// node --experimental-strip-types src/game/sheet.check.ts
-// validate() is the trust boundary for model output, so it gets the one check.
+// validate() is the trust boundary for model output.
 import assert from 'node:assert/strict'
 import { MAX_ACTS, MAX_SKILLS, validate } from './sheet.ts'
 
@@ -10,7 +9,7 @@ const every = [
   'mock', 'threaten', 'goad', 'reassure', 'encourage', 'apologize', 'admit_fear', 'share_memory',
 ].map((name) => ({ name, description: 'x' }))
 
-// Warm and bold enough that every gate is open, so only the caps can do the cutting.
+// warmth 90 / nerve 90 open every gate, so only the caps cut here.
 const god = validate({
   name: 'Omniel',
   attributes: { str: 99, dex: -4, wis: 12, cha: 12 },
@@ -28,8 +27,7 @@ assert.ok(!god.speechActs.some((a) => a.name === 'sing'), 'unknown act dropped')
 assert.deepEqual(god.attributes, { str: 18, dex: 3, wis: 12, cha: 12 }, 'attributes clamped to 3..18')
 assert.equal(god.voice.ttsVoiceId, 'onyx', 'unknown voice falls back')
 
-// A cold character asked for the warm acts anyway, and asked for them FIRST so the cap
-// cannot quietly do the gate's job. The gate has to be what refuses them.
+// Warm acts go first so the cap cannot hide the gate: the gate must refuse them.
 const warmFirst = [...every].sort((a, b) => Number(warmOnlyNames.includes(b.name)) - Number(warmOnlyNames.includes(a.name)))
 const cold = validate({ speechActs: warmFirst, disposition: { warmth: 20, nerve: 90 } })
 assert.ok(!cold.speechActs.some((a) => warmOnlyNames.includes(a.name)), 'gated acts dropped')

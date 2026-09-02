@@ -17,8 +17,7 @@ const textSchema = (sheet: Sheet) =>
     required: ['text'],
   }) as const
 
-// Set only while a tool's execute() is running, so every act can say whether it was
-// invoked through the registry or by the player's own button.
+// True only while a registry execute() runs; src() tells agent calls from player clicks.
 let viaTool = false
 const src = (): 'agent' | 'you' => (viaTool ? 'agent' : 'you')
 
@@ -44,8 +43,7 @@ const speechTools = (sheet: Sheet): WebMcpTool[] =>
 
 const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   const g = useGame.getState()
-  // An external agent can hold a tool handle past the reconcile that dropped it, so the
-  // guard is here rather than in the registry.
+  // An external agent can hold a tool handle past the reconcile that dropped it.
   if (c.gone && g.flags.includes(c.gone)) return `${c.id} → already done.`
   const dc = c.dc + dcBump - (c.easedBy && g.flags.includes(c.easedBy) ? 2 : 0)
   const r = roll(attrs[c.attr], dc)
@@ -65,9 +63,7 @@ const attempt = (c: Challenge, attrs: Sheet['attributes'], dcBump = 0) => {
   return line
 }
 
-// Failure has to be eventful or the dice are decoration. Fires once, and waits for the
-// current turn to end rather than being swallowed by it -- the whole point is that the
-// companion reacts to this unprompted.
+// Waits out the current turn, so the companion reacts to the noise unprompted.
 function wakeSomething() {
   const heard = 'Two rooms down, something that had been still stops being still.'
   const fire = async (tries = 0) => {
@@ -82,7 +78,7 @@ function wakeSomething() {
   setTimeout(() => void fire(), 2500)
 }
 
-/** Untrained, and it shows. Exists so no room is ever sealed by the companion's sheet. */
+/** DC bump for an unskilled player attempt. Keeps every room passable. */
 export const UNTRAINED = 2
 export const playerAttempt = (c: Challenge) =>
   attempt(c, { str: 10, dex: 10, wis: 10, cha: 10 }, UNTRAINED)
@@ -104,11 +100,7 @@ export const examineProp = (p: Prop) => {
 
 const seen = (p: Prop) => `seen_${p.id}`
 
-/**
- * Blocks until the world does something worth noticing, so an external agent has
- * somewhere to put its attention between acts. Never blocks indefinitely -- external
- * agents abandon hanging tools, and a soft return invites another call.
- */
+/** External agents abandon hanging tools, so the wait returns soft at this limit. */
 const WAIT_MS = 20_000
 
 let ownTurn = false
@@ -144,8 +136,7 @@ const waitTool: WebMcpTool = {
     "Call this when you've finished acting and want to see what unfolds.",
   inputSchema: empty,
   annotations: { readOnlyHint: true },
-  // In our own panel the player's next line is already the trigger, so waiting here
-  // would just stall the turn. External agents get the real blocking behaviour.
+  // Our own turn would stall 20s here; only external agents get the real block.
   execute: async () => {
     if (ownTurn) return 'A quiet moment. Nothing yet.'
     return (await nextEvent()) ?? 'A quiet moment. Nothing yet. Call again to keep waiting.'
@@ -187,14 +178,14 @@ const moveTool = (to: string): WebMcpTool => ({
   execute: () => go(to),
 })
 
-/** Looking twice at the same thing is not a capability, and the room stays under cap. */
+/** Cap props at 3 to keep the room under the 12-tool limit. */
 export const unseenProps = (room: Room, flags: string[]) =>
   room.props.filter((p) => !p.needs || flags.includes(p.needs)).slice(0, 3).filter((p) => !flags.includes(seen(p)))
 
 export const openExits = (room: Room, flags: string[]) =>
   room.exits.filter((e) => !e.needs || flags.includes(e.needs))
 
-/** The single source of truth for what it can do right now. Keep the total under 12. */
+/** Keep the total under 12 tools. */
 export function computeTools(sheet: Sheet | null, roomId: string, flags: string[]): WebMcpTool[] {
   if (!sheet) return []
   const room = rooms[roomId]
@@ -208,16 +199,12 @@ export function computeTools(sheet: Sheet | null, roomId: string, flags: string[
     ...openExits(room, flags).map((e) => moveTool(e.to)),
     waitTool,
   ].map((t) => ({
-    // The only place a tool's execute can be reached from outside, so it is the only
-    // place that can tell an agent's call from the player pressing a chip.
     ...t,
     execute: (a: Record<string, unknown>) => {
       viaTool = true
       if (!ownTurn && !useGame.getState().soloAgent) useGame.getState().toggleSoloAgent()
       try {
-        // Deliberately not awaited: every act reads src() before its first await, while
-        // wait_for_moment blocks for 20s -- holding the flag that long would stamp the
-        // player's own chip clicks as agent tool calls.
+        // Not awaited on purpose: acts read src() before their first await; a 20s wait would mislabel player clicks.
         return t.execute(a)
       } finally {
         viaTool = false

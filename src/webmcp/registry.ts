@@ -8,12 +8,10 @@ let queue: Promise<void> = Promise.resolve()
 export const liveDefs = () => [...live.values()].map((v) => v.def)
 export const settled = () => queue
 
-// The tool is gone the moment the world changes; the struck-through rule outlives it by
-// 200ms to draw and 900ms to hold, so the loss registers without blocking anything.
+// Strike outlives the already-unregistered tool: 200ms to draw, 900ms to hold.
 const STRIKE_MS = 1100
 
-// document.modelContext can be injected after first paint, so the page may start on the
-// local fallback and be handed the real one later. Everything must move across.
+// document.modelContext can arrive after first paint; re-register all tools on the new one.
 let ctx: unknown = null
 
 async function run(desired: WebMcpTool[]) {
@@ -56,16 +54,11 @@ async function run(desired: WebMcpTool[]) {
   }
 }
 
-// A rejected registerTool -- empty description, duplicate name, tools=() policy -- must
-// not poison the chain: every later reconcile would be skipped and settled() would throw
-// on every turn after it, with nothing registered and no way back.
+// Catch is load-bearing: one rejected registerTool poisons the queue chain forever.
 export const reconcile = (desired: WebMcpTool[]) =>
   (queue = queue.then(() => run(desired)).catch((err) => console.error('registry', err)))
 
-/**
- * Registration is driven straight off world state, not from a React effect — the
- * agent reads the registry, so it must not lag a render behind the world.
- */
+// Store subscription, not a React effect: the registry must not lag a render behind the world.
 export function startRegistry() {
   resync()
   return useGame.subscribe((s, prev) => {
@@ -73,7 +66,6 @@ export function startRegistry() {
   })
 }
 
-/** Reconcile against whatever context is current — also how a late-injected one gets filled. */
 export function resync() {
   const s = useGame.getState()
   return reconcile(computeTools(s.sheet, s.roomId, s.flags))

@@ -6,14 +6,7 @@ export type Msg = {
   tool_call_id?: string
 }
 
-/**
- * The API rejects a whole conversation if any tool_call is unanswered, or if a tool
- * message answers nothing. History outlives the turn that built it, so one bad turn
- * would otherwise brick every turn after it -- including the retry.
- *
- * Drops assistant messages whose tool_calls were not all answered, then drops the tool
- * messages left answering nothing.
- */
+/** API rejects the whole history if a tool_call is unanswered. One bad turn bricks all later turns. */
 export function repair(msgs: Msg[]): Msg[] {
   const answered = new Set<string>()
   for (const m of msgs) if (m.role === 'tool' && m.tool_call_id) answered.add(m.tool_call_id)

@@ -1,17 +1,15 @@
 import { useGame } from './store.ts'
 
-/** The room, the dice and the dark. Never a party member's voice. */
 export const NARRATOR = 'fable'
 
-// One element for the whole session. A freshly constructed Audio played after an awaited
-// fetch is a long way from the user's gesture, and iOS and the in-app browser refuse it.
-// Built on first use, not at import: the .check.ts scripts import this file under node.
+// iOS and in-app browsers refuse play() far from the user gesture; reuse one element.
+// Build on first use: .check.ts scripts import this file under node, where Audio is missing.
 let el: HTMLAudioElement | null = null
 const element = () => (el ??= new Audio())
 let playing: HTMLAudioElement | null = null
 let queue: Promise<void> = Promise.resolve()
 
-/** Call inside a real click, before anything is fetched, to buy the element its gesture. */
+/** Call synchronously inside a click handler to give the element gesture permission. */
 export const unlock = () => {
   const a = element()
   a.src = 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjEyLjEwMAAAAAAAAAAAAAAA'
@@ -38,8 +36,7 @@ async function play(text: string, voice: string) {
   playing = a
   try {
     await a.play()
-    // Waiting on 'ended' alone deadlocks the queue the first time stopAudio pauses a
-    // line mid-word -- mute, restart -- and every later line waits behind it forever.
+    // Wait on 'pause' and 'error' too: 'ended' alone deadlocks the queue when stopAudio pauses.
     await new Promise<void>((resolve) => {
       const ends = ['ended', 'pause', 'error']
       const done = () => {
@@ -54,7 +51,6 @@ async function play(text: string, voice: string) {
   }
 }
 
-/** Fire and forget. The bubble is already on screen; audio catches up or it doesn't. */
 export const speak = (text: string, voice: string) => {
   queue = queue.then(() => play(text, voice)).catch(() => {})
 }

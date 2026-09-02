@@ -1,10 +1,9 @@
 export const config = { path: '/api/chat' }
 
-// Cheap by default; the eval (design doc §10) overrides this to compare setups.
+// eval overrides CHAT_MODEL to compare setups.
 const MODEL = process.env.CHAT_MODEL ?? 'gpt-5-mini'
 
-// Reasoning tokens count toward this cap, so leave headroom above the one or two
-// sentences a speech act actually emits.
+// Reasoning tokens count toward this cap, so leave headroom above a two-sentence reply.
 const MAX_COMPLETION_TOKENS = 1500
 
 export default async (req: Request): Promise<Response> => {
@@ -15,7 +14,7 @@ export default async (req: Request): Promise<Response> => {
 
   const { messages, tools } = (await req.json()) as { messages: unknown; tools: unknown[] }
 
-  // Open proxy on the owner's key: bound it well above real play (the game's own ceiling is 12 tools).
+  // Open proxy on the owner's key: bound above real play (game ceiling is 12 tools).
   if (!Array.isArray(messages) || messages.length > 80 || JSON.stringify(messages).length > 60_000)
     return new Response('too large', { status: 413 })
   if (Array.isArray(tools) && tools.length > 14) return new Response('too many tools', { status: 413 })

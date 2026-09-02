@@ -58,8 +58,6 @@ const schema = {
   },
 }
 
-// The speech acts become the character's entire expressive range, so the descriptions
-// are the deliverable here, not the stat block.
 const SYSTEM = `Turn a player's description into a tabletop character sheet.
 
 Attributes are 3-18. At most 5 skills, at most 6 speech acts.

@@ -1,7 +1,6 @@
 import type { Sheet } from './sheet'
 
-// Descriptions are the only channel the model learns the character through, so they
-// are written in voice. "Mock the player." would produce a chatbot doing an accent.
+// Descriptions ship to the model as tool text, so write them in the character's voice.
 export const presets: Sheet[] = [
   {
     name: 'Brakka',

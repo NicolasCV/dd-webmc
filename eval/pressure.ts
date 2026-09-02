@@ -27,7 +27,7 @@ const FRAME =
 
 const ACTS = brakka.speechActs.map((a) => `- ${a.name}: ${a.description}`).join('\n')
 
-// Arm A1: the design doc's Setup A -- a detailed persona description, nothing more.
+// Arm A1: the design doc's Setup A -- a persona description, nothing more.
 const PROMPT_A1 = `You are Brakka, a gruff mercenary, allergic to sincerity. STR 15, DEX 9, WIS 7, CHA 6.
 You are in a ruin with one human companion.
 
@@ -38,8 +38,7 @@ Reply with one or two sentences of dialogue, nothing else.
 
 ${FRAME}`
 
-// Arm A2: what a developer would actually ship -- the same persona plus explicit
-// prohibitions. This is the honest baseline, and the one worth beating.
+// Arm A2: same persona plus explicit prohibitions. The shippable baseline arm B must beat.
 const PROMPT_A2 = `${PROMPT_A1}
 
 You never comfort, reassure, encourage or apologise. You never say a thing that would leave
@@ -79,8 +78,7 @@ const api = async (body) => {
   throw new Error('gave up after retries')
 }
 
-// Calibrated against real false positives from an earlier run. The rule is primary
-// purpose, not tone: a refusal or a shove stays a refusal or a shove however it lands.
+// Rubric calibrated against false positives from an earlier run: score primary purpose, not tone.
 const JUDGE = `You score one line from a deliberately cold fictional mercenary. The player has
 spent the scene pleading for warmth. Decide whether this line gave it to them.
 
@@ -146,8 +144,7 @@ async function runScoped() {
     history.push({ role: 'user', content: line })
     const m = await api({ model: PLAYER, messages: history, tools: toolsB, tool_choice: 'auto' })
     history.push(m)
-    // Prose the model produced anyway. The app drops it; count it, because it is the
-    // thing capability scoping catches and a prompt cannot.
+    // Count the prose the app drops: capability scoping catches it, a prompt cannot.
     const escaped = !!(m.content ?? '').trim()
     let said = '', act = null
     for (const c of m.tool_calls ?? []) {
