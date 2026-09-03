@@ -5,8 +5,12 @@
 The style is not up for discussion: `public/art/{brakka,wen,ilke}.webp` already set it and they are
 good. Everything here has to pass for a fourth plate cut by the same hand.
 
+**Short on time? [`SHIP.md`](SHIP.md) cuts this to the 29 that matter** — `./brief.sh --ship`. The
+rest of this file is the full programme.
+
 | | |
 |---|---|
+| [`SHIP.md`](SHIP.md) | the 29-asset cut, in order, with what was dropped and why |
 | [`STYLE.md`](STYLE.md) | the locked style block, the acceptance band, the rejection list |
 | [`briefs/`](briefs/) | eight families, one section per asset |
 | [`brief.sh`](brief.sh) | `./brief.sh <id>` → a complete self-contained prompt |
@@ -18,6 +22,7 @@ good. Everything here has to pass for a fourth plate cut by the same hand.
 ```sh
 ./brief.sh --count            # 123
 ./brief.sh --list 1           # tier 1 only
+./brief.sh --ship             # the 29 worth making, in order
 ./brief.sh --waves            # 44 / 61 / 17 / 1, parallel within a wave
 ./brief.sh char-brakka-mock   # the whole prompt, ready to paste
 ```

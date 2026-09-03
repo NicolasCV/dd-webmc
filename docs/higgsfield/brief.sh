@@ -67,6 +67,12 @@ deps_of() {
 
 case "$1" in
   --count) all_ids | wc -l | tr -d ' '; exit 0 ;;
+  # The 29 worth making, in order. SHIP.md's fenced blocks are the list.
+  # Drops the optional mouth twins (synthesised, no section) but keeps room-landing-open, which has one.
+  --ship)
+    fences < "$here/SHIP.md" | tr ' ' '\n' | grep -v '^$' |
+      while read -r id; do [ -n "$(file_for "$id")" ] && echo "$id"; done
+    exit 0 ;;
   # Dependency waves: everything in a wave can be generated in parallel.
   --waves)
     done_ids=" "; left=$(all_ids | sort); w=0
