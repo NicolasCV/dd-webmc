@@ -162,7 +162,7 @@ export default function App() {
               <code className="font-mono text-brass-ink">
                 chrome://flags/#enable-webmcp-testing
               </code>
-              , or ChatGPT's in-app browser.
+              .
             </p>
           )}
 

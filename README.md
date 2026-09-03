@@ -40,8 +40,8 @@ disposition closes](docs/start.png)
 
 ## Take the agent's seat
 
-Open the page in Chrome 149+ with `chrome://flags/#enable-webmcp-testing`, or in ChatGPT's
-in-app browser. The page registers up to twelve tools on `document.modelContext`. Tell your
+Open the page in Chrome 149+ with `chrome://flags/#enable-webmcp-testing`. The page registers
+up to twelve tools on `document.modelContext`. Tell your
 agent: *"You are the companion in this tab. Play the character using the page's tools, and
 call `wait_for_moment` when you have finished acting."* Then open the brass registry button
 in the masthead — it names the registry in use and the live count — and switch the built-in
