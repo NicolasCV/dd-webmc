@@ -90,6 +90,17 @@ Measured on the three plates that already work:
 **Band: mean 160–200, stddev ≥ 65.** `encode.sh` prints both and refuses outside it. `proof.html`
 computes the same numbers in-browser and renders candidates at real size on real vellum.
 
+The band does not catch a **sepia-toned master**, which passes on the gray numbers and still lands as
+a yellow slab: `.plate` adds `sepia(0.22)` of its own, and multiply cannot lift saturated paper off
+the vellum. Scene plates come out of the generator warmer than the portraits, so they get a pre-pass
+before `encode.sh`:
+
+```sh
+magick master.webp -modulate 100,15 -level 10%,98% -sigmoidal-contrast 3,50% neutral.png
+```
+
+Saturation down to a stain, paper up to near-white, ink back to crosshatch weight.
+
 ## Standing rejection list
 
 Reject and rerun rather than trying to patch in an edit:
