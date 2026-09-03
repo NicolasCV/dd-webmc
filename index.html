@@ -37,6 +37,21 @@
         "author": { "@type": "Person", "name": "Nicolas Cardenas" }
       }
     </script>
+    <style>
+      #fallback {
+        max-width: 46rem; margin: 0 auto; padding: 3rem 1.5rem;
+        font: 16px/1.6 "IBM Plex Serif", Georgia, serif; color: #2b2622;
+      }
+      #fallback h1 { font-size: 2rem; margin: 0 0 .5rem }
+      #fallback h2 { font-size: 1.1rem; margin: 2rem 0 .5rem }
+      #fallback code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .9em }
+      #fallback a { color: #7a4a2f }
+      #fallback .note {
+        border: 1px solid rgba(43,38,34,.25); padding: .75rem 1rem; margin-bottom: 2rem;
+        font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .85rem;
+      }
+      #fallback-wrap { background: #f2ece0; min-height: 100vh }
+    </style>
   </head>
   <body>
     <noscript>
@@ -130,5 +145,19 @@
     </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      addEventListener('error', function () {
+        setTimeout(function () {
+          var root = document.getElementById('root')
+          if (!root || root.firstChild) return
+          var ns = document.querySelector('noscript')
+          if (!ns) return
+          root.innerHTML =
+            '<div id="fallback-wrap"><div id="fallback"><p class="note">' +
+            'This browser could not run the game, so here is what it does.' +
+            '</p>' + ns.textContent + '</div></div>'
+        }, 2000)
+      }, true)
+    </script>
   </body>
 </html>
