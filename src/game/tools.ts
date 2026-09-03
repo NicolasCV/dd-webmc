@@ -90,18 +90,19 @@ export const playerChallenges = (room: Room, sheet: Sheet | null, flags: string[
 
 export const examineProp = (p: Prop) => {
   const g = useGame.getState()
-  g.say('world', p.onExamine, { act: `examine_${p.id}`, source: src() })
-  speak(p.onExamine, NARRATOR)
+  const text = p.onExamine.replaceAll('{them}', g.sheet?.name ?? 'the one beside you')
+  g.say('world', text, { act: `examine_${p.id}`, source: src() })
+  speak(text, NARRATOR)
   if (p.reveals) g.setFlag(p.reveals)
   g.setFlag(seen(p))
   if (p.ends) g.end()
-  return p.onExamine
+  return text
 }
 
 const seen = (p: Prop) => `seen_${p.id}`
 
 /** External agents abandon hanging tools, so the wait returns soft at this limit. */
-const WAIT_MS = 20_000
+const WAIT_MS = 45_000
 
 let ownTurn = false
 export const setOwnTurn = (v: boolean) => {
@@ -139,8 +140,10 @@ const waitTool: WebMcpTool = {
   name: WAIT,
   description:
     "Say and do nothing, and wait until something happens that you'd notice. Returns " +
-    "what you perceive. Call this when you've finished acting, or when the honest answer " +
-    'is to stay quiet, and you want to see what they do next.',
+    'what you perceive: a line from them, a roll, a room. This is your loop — when it ' +
+    'returns, act on what came back and then call this again, and keep calling it even ' +
+    'when it returns nothing. The player is a person typing at a keyboard and is often ' +
+    'slow. Stop calling it only when the scene has ended.',
   inputSchema: empty,
   annotations: { readOnlyHint: true },
   // Our own turn would stall 20s here; only external agents get the real block.

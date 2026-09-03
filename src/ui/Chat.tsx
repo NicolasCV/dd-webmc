@@ -3,7 +3,7 @@ import { agentTurn, resetHistory, retry } from '../agent/turn'
 import { stopAudio } from '../audio'
 import { FAMILIES, familyOpen } from '../game/sheet'
 import { examineProp, go, openExits, playerAttempt, playerChallenges, unseenProps } from '../game/tools'
-import { rooms, START } from '../game/world'
+import { opening, rooms, START } from '../game/world'
 import type { Bubble } from '../store'
 import { TURN_BUDGET, useGame } from '../store'
 import { Icon } from './icons'
@@ -11,6 +11,13 @@ import { Room } from './Room'
 
 /** move() sets Bubble.act to the room name; every other act is a tool name. */
 const isRoomName = (act: string) => Object.values(rooms).some((r) => r.name === act)
+
+const RoomHead = ({ name }: { name: string }) => (
+  <div className="mb-2 flex items-center gap-3">
+    <span className="font-display text-lg tracking-tight">{name}</span>
+    <span className="h-px flex-1 bg-ink/20" />
+  </div>
+)
 
 function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: string }) {
   if (b.act === 'tools_registered' || b.act === 'tools_unregistered') {
@@ -27,10 +34,7 @@ function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: str
   if (b.who === 'world' && b.act && isRoomName(b.act))
     return (
       <div className="rise pt-3">
-        <div className="mb-2 flex items-center gap-3">
-          <span className="font-display text-lg tracking-tight">{b.act}</span>
-          <span className="h-px flex-1 bg-ink/20" />
-        </div>
+        <RoomHead name={b.act} />
         <p className="text-body leading-relaxed text-pencil">{b.text}</p>
       </div>
     )
@@ -87,17 +91,25 @@ export function Chat({ className = '' }: { className?: string }) {
   const {
     sheet, bubbles, roomId, flags, visited, turns, busy, halted, ended, soloAgent, error, muted, mechanics,
     registered, unregistered, say, halt, resume, reset, leave, toggleMute, toggleMechanics,
+    toggleSoloAgent,
   } = useGame()
   const room = rooms[roomId]
   const over = ended || turns >= TURN_BUDGET
   const locked = busy || halted || over
 
-  // StrictMode double-invokes this effect; agentTurn no-ops while busy, so no double greeting.
+  // Let the cold open land before the companion is asked for a line.
+  // Gated on turns, not bubbles: the registry logs its own bubbles inside the delay.
   useEffect(() => {
-    if (sheet && bubbles.length === 0) {
-      void agentTurn(`You are both at the bottom of the stairs. ${rooms[roomId].description} Say something.`)
-    }
-  }, [sheet, roomId, bubbles.length])
+    if (!sheet || turns > 0) return
+    const id = setTimeout(() => {
+      void agentTurn(
+        `${opening(sheet.name).join(' ')} ${rooms[roomId].description} ` +
+          'You are both at the bottom of the stairs and nothing has happened yet. ' +
+          "Say something, or don't.",
+      )
+    }, 1600)
+    return () => clearTimeout(id)
+  }, [sheet, roomId, turns])
 
   // Unstick on upward scroll. Distance from bottom cannot tell who scrolled away from who never scrolled.
   const stuck = useRef(true)
@@ -112,8 +124,9 @@ export function Chat({ className = '' }: { className?: string }) {
   // Scroll the transcript, never the document.
   useEffect(() => {
     const el = box.current
-    if (el && stuck.current) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [bubbles.length, busy])
+    // Turn 0 is the cold open: scrolling to the bottom would bury it before it is read.
+    if (el && stuck.current && turns > 0) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [bubbles.length, busy, turns])
 
   useEffect(() => {
     if (!busy && !halted && !ended) inputRef.current?.focus()
@@ -153,6 +166,7 @@ export function Chat({ className = '' }: { className?: string }) {
 
   const chip =
     'inline-flex min-h-6 items-center px-1 text-brass-ink hover:underline active:text-oxblood disabled:text-pencil/40 disabled:no-underline'
+  const toolChip = `${chip} gap-1.5 ${mechanics ? 'font-mono text-label' : 'text-body italic'}`
   const ctl =
     'inline-flex min-h-6 items-center gap-1.5 px-1 underline decoration-dotted decoration-ink/30 underline-offset-[3px] hover:decoration-ink'
   const ic = 'inline-flex min-h-6 items-center px-1 hover:text-oxblood'
@@ -255,17 +269,24 @@ export function Chat({ className = '' }: { className?: string }) {
         className="scroll-paper flex max-h-[55dvh] min-h-0 flex-1 flex-col overflow-y-auto py-5 pr-1 lg:max-h-none"
       >
         <div className="mx-auto flex w-full max-w-[44rem] flex-col gap-5">
-          <p className="text-body leading-relaxed text-pencil">{rooms[START].description}</p>
-          {bubbles.length === 0 && (
+          {opening(sheet?.name ?? 'them').map((line, i) => (
+            <p
+              key={line}
+              style={{ animationDelay: `${i * 500}ms` }}
+              className="rise text-said leading-[1.65] text-ink/90"
+            >
+              {line}
+            </p>
+          ))}
+          <div className="rise" style={{ animationDelay: '1000ms' }}>
+            <RoomHead name={rooms[START].name} />
+            <p className="text-body leading-relaxed text-pencil">{rooms[START].description}</p>
+          </div>
+          {turns === 0 && (
             <>
-              <p className="text-note text-pencil italic">
+              <p className="rise text-note text-pencil italic" style={{ animationDelay: '1300ms' }}>
                 Whatever you ask for, the answer has to come out of the tools on the sheet.
               </p>
-              {soloAgent && (
-                <p className="font-mono text-label text-pencil">
-                  Waiting for an outside agent — the built-in model is off.
-                </p>
-              )}
             </>
           )}
           {bubbles.map((b) => (
@@ -277,6 +298,16 @@ export function Chat({ className = '' }: { className?: string }) {
             </p>
           )}
           {halted && <p className="text-body text-oxblood italic">Paused. Nothing acts until you resume.</p>}
+          {soloAgent && !over && !halted && (
+            <p className="font-mono text-label leading-relaxed text-pencil">
+              Your agent has the seat, so the built-in model is off. What you say is on the page;
+              it answers the next time it calls a tool. If it has stopped looping,{' '}
+              <button type="button" onClick={toggleSoloAgent} className="text-brass-ink underline">
+                take the seat back
+              </button>
+              .
+            </p>
+          )}
           {error && (
             <p role="alert" className="font-mono text-label text-oxblood">
               {error}{' '}
@@ -357,7 +388,7 @@ export function Chat({ className = '' }: { className?: string }) {
                     type="button"
                     disabled={locked}
                     onClick={() => act(`They examine ${p.label}. ${examineProp(p)}`)}
-                    className={`${chip} gap-1.5 ${mechanics ? 'font-mono text-label' : 'text-body italic'}`}
+                    className={toolChip}
                   >
                     <Icon of="look" />
                     {mechanics ? `examine_${p.id}` : p.label}
@@ -370,7 +401,7 @@ export function Chat({ className = '' }: { className?: string }) {
                   disabled={locked}
                   onClick={() => act(`They try it themselves. ${playerAttempt(c)}`)}
                   title={`You try it yourself — ${sheet?.name ?? 'they'} is not asked`}
-                  className={`${chip} gap-1.5 ${mechanics ? 'font-mono text-label' : 'text-body italic'}`}
+                  className={toolChip}
                 >
                   <Icon of="roll" />
                   {mechanics ? c.id : c.id.replace(/_/g, ' ')}
@@ -396,7 +427,7 @@ export function Chat({ className = '' }: { className?: string }) {
                   type="button"
                   disabled={locked}
                   onClick={() => act(`They walk to ${rooms[e.to].name}. ${go(e.to)}`)}
-                  className={`${chip} gap-1.5 ${mechanics ? 'font-mono text-label' : 'text-body italic'}`}
+                  className={toolChip}
                 >
                   <Icon of="go" />
                   {mechanics ? `move_${e.to}` : rooms[e.to].name}

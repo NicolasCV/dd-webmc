@@ -96,8 +96,8 @@ export const rooms: Record<string, Room> = {
         id: 'murals',
         label: 'the murals',
         onExamine:
-          'A ledger, painted. Debts paid in kind. The last panel shows a sigil pressed ' +
-          'into a door — and you know where that door is.',
+          'A ledger, painted. Debts paid in kind, two names to a line. The last panel ' +
+          'shows a sigil pressed into a door — and you know where that door is.',
         requires: 'lore',
         reveals: 'sigil',
       },
@@ -180,15 +180,21 @@ export const rooms: Record<string, Room> = {
       'Not treasure. Shelves of stoppered jars, each one holding an hour somebody did ' +
       'not get to live. One shelf is empty and swept clean.',
     props: [
-      { id: 'reliquary', label: 'the empty shelf', onExamine: 'Swept clean, recently. Someone got here first, or is coming.' },
+      {
+        id: 'reliquary',
+        label: 'the empty shelf',
+        onExamine:
+          'Swept clean, recently. Someone settled here not long ago and walked back up ' +
+          'the stairs. The dust says two came down.',
+      },
       {
         id: 'ledger',
         label: 'a ledger on a stand',
         needs: 'tally',
         ends: true,
         onExamine:
-          'Open to today. Two names. One of them is yours. You take the notched stick to it, ' +
-          'and the second name comes off the page as the ink dries on yours.',
+          'Open to today. Two names. One is yours. The other is {them}. You take the ' +
+          'notched stick to it, and their name comes off the page as the ink dries on yours.',
       },
     ],
     exits: [{ to: 'hall' }],
@@ -204,3 +210,11 @@ export const roll = (attr: number, dc: number): Roll => {
   const total = d20 + mod(attr)
   return { d20, total, dc, ok: total >= dc }
 }
+
+export const opening = (name: string) => [
+  'A book under this hill has your name written in it, and a date beside the name. ' +
+    'The date is today. Debts here are paid in hours off a life, and the book has ' +
+    'never once closed on a single name.',
+  `You could not afford a crowd. So it is you and ${name} — and what ${name} will ` +
+    'and will not do for you was settled before either of you started down.',
+]

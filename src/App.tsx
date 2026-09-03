@@ -9,6 +9,14 @@ import { resync, startRegistry } from './webmcp/registry'
 
 const REPO = 'https://github.com/NicolasCV/dd-webmc'
 
+const AGENT_PROMPT =
+  'You are the companion in this tab. Your abilities are WebMCP tools registered on ' +
+  'document.modelContext — call getTools() to see them and executeTool() to act. Do not click ' +
+  'the page. When you have finished acting, call wait_for_moment: it blocks until the player ' +
+  'does something and returns what they did. Act on that, then call it again, and keep calling ' +
+  'it — the player is a person typing and is often slow. Stay in that loop until the scene ends; ' +
+  'do not stop to report back to me.'
+
 export default function App() {
   const started = useGame((s) => !!s.sheet)
   const soloAgent = useGame((s) => s.soloAgent)
@@ -16,6 +24,7 @@ export default function App() {
   const [live, setLive] = useState(supported)
   const [tools, setTools] = useState<RegisteredTool[]>([])
   const [pane, setPane] = useState<'scene' | 'sheet'>('scene')
+  const [copied, setCopied] = useState(false)
   const dlg = useRef<HTMLDialogElement>(null)
   const seat = useRef<HTMLDivElement>(null)
 
@@ -160,11 +169,22 @@ export default function App() {
           <ol className="mt-4 list-decimal space-y-2 pl-5 text-body leading-relaxed text-pencil">
             <li>Open this page in a browser your agent can see.</li>
             <li>
-              Tell it:{' '}
-              <span className="font-mono text-note text-ink">
-                “You are the companion in this tab. Play the character using the page's tools, and
-                call wait_for_moment when you have finished acting.”
-              </span>
+              Give it this prompt:
+              <div className="mt-2 border border-ink/25 bg-ink/[0.04] p-3">
+                <p className="font-mono text-note leading-relaxed text-ink">{AGENT_PROMPT}</p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void navigator.clipboard.writeText(AGENT_PROMPT).then(() => {
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    })
+                  }
+                  className="mt-2.5 font-mono text-label tracking-label text-brass-ink uppercase hover:underline"
+                >
+                  {copied ? 'copied ✓' : 'copy prompt'}
+                </button>
+              </div>
             </li>
             <li>Turn the built-in model off below, so you are the only thing driving the companion.</li>
           </ol>
