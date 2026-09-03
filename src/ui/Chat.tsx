@@ -6,6 +6,7 @@ import { examineProp, go, openExits, playerAttempt, playerChallenges, unseenProp
 import { rooms, START } from '../game/world'
 import type { Bubble } from '../store'
 import { TURN_BUDGET, useGame } from '../store'
+import { Icon } from './icons'
 import { Room } from './Room'
 
 /** move() sets Bubble.act to the room name; every other act is a tool name. */
@@ -13,10 +14,11 @@ const isRoomName = (act: string) => Object.values(rooms).some((r) => r.name === 
 
 function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: string }) {
   if (b.act === 'tools_registered' || b.act === 'tools_unregistered') {
+    if (!mechanics) return null
     const gained = b.act === 'tools_registered'
     return (
-      <p className={`rise font-mono text-[11px] ${gained ? 'text-brass-ink' : 'text-oxblood'}`}>
-        <span className="mr-2 tracking-[0.14em] uppercase">{gained ? '+ registered' : '− unregistered'}</span>
+      <p className={`rise font-mono text-label ${gained ? 'text-brass-ink' : 'text-oxblood'}`}>
+        <span className="mr-2 tracking-label uppercase">{gained ? '+ registered' : '− unregistered'}</span>
         {b.text}
       </p>
     )
@@ -29,7 +31,7 @@ function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: str
           <span className="font-display text-lg tracking-tight">{b.act}</span>
           <span className="h-px flex-1 bg-ink/20" />
         </div>
-        <p className="text-[15px] leading-relaxed text-pencil">{b.text}</p>
+        <p className="text-body leading-relaxed text-pencil">{b.text}</p>
       </div>
     )
 
@@ -38,12 +40,12 @@ function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: str
 
   return (
     <div className="rise grid grid-cols-[5.5rem_1fr] gap-x-3">
-      <span className="pt-[0.4em] text-right font-mono text-[10px] leading-tight tracking-[0.14em] text-pencil uppercase">
+      <span className="pt-[0.4em] text-right font-mono text-micro leading-tight tracking-label text-pencil uppercase">
         {speaker}
       </span>
       <div>
         {b.act && !isRoomName(b.act) && mechanics && (
-          <span className="mb-1 flex flex-wrap items-baseline gap-x-2 font-mono text-[11px]">
+          <span className="mb-1 flex flex-wrap items-baseline gap-x-2 font-mono text-label">
             {b.source && (
               <span className={b.source === 'agent' ? 'text-oxblood' : 'text-pencil'}>
                 {b.source === 'agent' ? '◆ tool call' : '◇ you'}
@@ -58,14 +60,14 @@ function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: str
         <p
           className={
             companion
-              ? 'text-[17px] leading-[1.65]'
-              : `text-[15px] leading-relaxed text-pencil${b.who === 'player' ? ' italic' : ''}`
+              ? 'text-said leading-[1.65]'
+              : `text-body leading-relaxed text-pencil${b.who === 'player' ? ' italic' : ''}`
           }
         >
           {b.text}
         </p>
         {b.roll && (
-          <span className="mt-1 block font-mono text-[11px]">
+          <span className="mt-1 block font-mono text-label">
             <span className="text-pencil">{b.roll.of}</span>{' '}
             <span className={b.roll.ok ? 'text-brass-ink' : 'text-oxblood'}>{b.roll.ok ? 'OK' : 'FAIL'}</span>{' '}
             <span className="text-pencil">
@@ -152,8 +154,9 @@ export function Chat({ className = '' }: { className?: string }) {
   const chip =
     'inline-flex min-h-6 items-center px-1 text-brass-ink hover:underline active:text-oxblood disabled:text-pencil/40 disabled:no-underline'
   const ctl =
-    'inline-flex min-h-6 items-center px-1 underline decoration-dotted decoration-ink/30 underline-offset-[3px] hover:decoration-ink'
-  const eyebrow = 'px-1 font-mono text-[11px] tracking-[0.14em] text-pencil uppercase'
+    'inline-flex min-h-6 items-center gap-1.5 px-1 underline decoration-dotted decoration-ink/30 underline-offset-[3px] hover:decoration-ink'
+  const ic = 'inline-flex min-h-6 items-center px-1 hover:text-oxblood'
+  const eyebrow = 'px-1 font-mono text-label tracking-label text-pencil uppercase'
   const divider = <span className="h-3 w-px bg-ink/20" />
 
   const rolls = bubbles.filter((b) => b.roll).length
@@ -175,7 +178,7 @@ export function Chat({ className = '' }: { className?: string }) {
         <h1 key={roomId} className="rise font-display text-2xl tracking-tight lg:text-3xl">
           {room.name}
         </h1>
-        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 font-mono text-[11px] [&>*]:whitespace-nowrap">
+        <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 font-mono text-label [&>*]:whitespace-nowrap">
           <span
             className={turns >= TURN_BUDGET ? 'text-oxblood' : 'text-pencil'}
             title="Every line, look and move is one agent turn. Capped at 40 so a shared demo key survives the day."
@@ -189,17 +192,21 @@ export function Chat({ className = '' }: { className?: string }) {
               stopAudio()
               toggleMute()
             }}
-            className={`${ctl} ${muted ? 'text-oxblood' : 'text-brass-ink'}`}
+            title={muted ? 'unmute' : 'mute'}
+            aria-label={muted ? 'unmute' : 'mute'}
+            className={`${ic} ${muted ? 'text-oxblood' : 'text-brass-ink'}`}
           >
-            {muted ? 'unmute' : 'mute'}
+            <Icon of={muted ? 'hush' : 'sound'} className="size-4" />
           </button>
           <button
             type="button"
             onClick={toggleMechanics}
-            title="Display only — the tools stay registered either way."
-            className={`${ctl} text-ink/70`}
+            title="Tool names, the registry log and the map's flags. Display only — the tools stay registered either way."
+            aria-pressed={mechanics}
+            className={`${ctl} ${mechanics ? 'text-ink/70' : 'text-brass-ink'}`}
           >
-            {mechanics ? 'hide tool names' : 'show tool names'}
+            <Icon of={mechanics ? 'seen' : 'unseen'} className="size-4" />
+            mechanics
           </button>
           {divider}
           <button
@@ -209,16 +216,30 @@ export function Chat({ className = '' }: { className?: string }) {
               stopAudio()
               halt()
             }}
-            className={`${ctl} ${halted ? 'text-brass-ink' : 'text-oxblood'}`}
+            title={halted ? 'resume' : 'pause'}
+            aria-label={halted ? 'resume' : 'pause'}
+            className={`${ic} ${halted ? 'text-brass-ink' : 'text-oxblood'}`}
           >
-            {halted ? 'resume' : 'pause'}
+            <Icon of={halted ? 'play' : 'pause'} className="size-4" />
           </button>
           {divider}
-          <button type="button" onClick={restart} className={`${ctl} text-ink/70`}>
-            restart
+          <button
+            type="button"
+            onClick={restart}
+            title="restart the scene"
+            aria-label="restart the scene"
+            className={`${ic} text-ink/70`}
+          >
+            <Icon of="again" className="size-4" />
           </button>
-          <button type="button" onClick={change} className={`${ctl} text-ink/70`}>
-            swap
+          <button
+            type="button"
+            onClick={change}
+            title="another companion"
+            aria-label="another companion"
+            className={`${ic} text-ink/70`}
+          >
+            <Icon of="swap" className="size-4" />
           </button>
         </div>
       </header>
@@ -234,14 +255,14 @@ export function Chat({ className = '' }: { className?: string }) {
         className="scroll-paper flex max-h-[55dvh] min-h-0 flex-1 flex-col overflow-y-auto py-5 pr-1 lg:max-h-none"
       >
         <div className="mx-auto flex w-full max-w-[44rem] flex-col gap-5">
-          <p className="text-[15px] leading-relaxed text-pencil">{rooms[START].description}</p>
+          <p className="text-body leading-relaxed text-pencil">{rooms[START].description}</p>
           {bubbles.length === 0 && (
             <>
-              <p className="text-[13px] text-pencil italic">
+              <p className="text-note text-pencil italic">
                 Whatever you ask for, the answer has to come out of the tools on the sheet.
               </p>
               {soloAgent && (
-                <p className="font-mono text-[11px] text-pencil">
+                <p className="font-mono text-label text-pencil">
                   Waiting for an outside agent — the built-in model is off.
                 </p>
               )}
@@ -251,13 +272,13 @@ export function Chat({ className = '' }: { className?: string }) {
             <Line key={b.id} b={b} mechanics={mechanics} name={sheet?.name ?? 'them'} />
           ))}
           {busy && (
-            <p role="status" className="rise font-mono text-[11px] tracking-[0.14em] text-pencil uppercase">
+            <p role="status" className="rise font-mono text-label tracking-label text-pencil uppercase">
               <span className="think">{sheet?.name ?? 'They'} is deciding…</span>
             </p>
           )}
-          {halted && <p className="text-[15px] text-oxblood italic">Paused. Nothing acts until you resume.</p>}
+          {halted && <p className="text-body text-oxblood italic">Paused. Nothing acts until you resume.</p>}
           {error && (
-            <p role="alert" className="font-mono text-[11px] text-oxblood">
+            <p role="alert" className="font-mono text-label text-oxblood">
               {error}{' '}
               {!halted && turns < TURN_BUDGET && (
                 <button type="button" onClick={() => void retry()} className="underline">
@@ -274,7 +295,7 @@ export function Chat({ className = '' }: { className?: string }) {
           <h2 className="font-display text-3xl tracking-tight">
             {ended ? 'The account is closed' : 'Out of turns'}
           </h2>
-          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-[11px] lg:grid-cols-5">
+          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-label lg:grid-cols-5">
             {[
               ['turns spent', `${turns}/${TURN_BUDGET}`],
               ['rooms', `${visited.length}/${Object.keys(rooms).length}`],
@@ -283,21 +304,21 @@ export function Chat({ className = '' }: { className?: string }) {
               ['unregistered', `${unregistered}`],
             ].map(([label, value]) => (
               <div key={label}>
-                <dt className="tracking-[0.14em] text-pencil uppercase">{label}</dt>
+                <dt className="tracking-label text-pencil uppercase">{label}</dt>
                 <dd className="text-ink">{value}</dd>
               </div>
             ))}
           </dl>
           {withheld.length > 0 && (
-            <p className="mt-3 text-[15px] leading-relaxed text-pencil">
+            <p className="mt-3 text-body leading-relaxed text-pencil">
               {sheet?.name} never once had{' '}
-              <span className="font-mono text-[13px] line-through decoration-oxblood/70">
+              <span className="font-mono text-note line-through decoration-oxblood/70">
                 {withheld.join(' ')}
               </span>
               . Not declined — <em>not registered</em>.
             </p>
           )}
-          <div className="mt-4 flex gap-5 font-mono text-[11px]">
+          <div className="mt-4 flex gap-5 font-mono text-label">
             <button type="button" onClick={restart} className={chip}>
               play it again
             </button>
@@ -318,8 +339,9 @@ export function Chat({ className = '' }: { className?: string }) {
                     type="button"
                     disabled={locked}
                     onClick={() => ask(line)}
-                    className={`${chip} text-[14px] italic`}
+                    className={`${chip} gap-1.5 text-body italic`}
                   >
+                    <Icon of="say" />
                     {line}
                   </button>
                 ))}
@@ -334,10 +356,11 @@ export function Chat({ className = '' }: { className?: string }) {
                     key={p.id}
                     type="button"
                     disabled={locked}
-                    onClick={() => act(`You examine ${p.label}. ${examineProp(p)}`)}
-                    className={`${chip} ${mechanics ? 'font-mono text-[11px]' : 'text-[14px] italic'}`}
+                    onClick={() => act(`They examine ${p.label}. ${examineProp(p)}`)}
+                    className={`${chip} gap-1.5 ${mechanics ? 'font-mono text-label' : 'text-body italic'}`}
                   >
-                    {mechanics ? `examine_${p.id}` : `look at ${p.label}`}
+                    <Icon of="look" />
+                    {mechanics ? `examine_${p.id}` : p.label}
                   </button>
                 ))}
               {playerChallenges(room, sheet, flags).map((c) => (
@@ -345,9 +368,11 @@ export function Chat({ className = '' }: { className?: string }) {
                   key={c.id}
                   type="button"
                   disabled={locked}
-                  onClick={() => act(`You try it yourself. ${playerAttempt(c)}`)}
-                  className={`${chip} ${mechanics ? 'font-mono text-[11px]' : 'text-[14px] italic'}`}
+                  onClick={() => act(`They try it themselves. ${playerAttempt(c)}`)}
+                  title={`You try it yourself — ${sheet?.name ?? 'they'} is not asked`}
+                  className={`${chip} gap-1.5 ${mechanics ? 'font-mono text-label' : 'text-body italic'}`}
                 >
+                  <Icon of="roll" />
                   {mechanics ? c.id : c.id.replace(/_/g, ' ')}
                 </button>
               ))}
@@ -359,8 +384,9 @@ export function Chat({ className = '' }: { className?: string }) {
                     type="button"
                     disabled={locked}
                     onClick={() => ask(`Can you ${c.id.replace(/_/g, ' ')}?`)}
-                    className={`${chip} text-[14px] italic`}
+                    className={`${chip} gap-1.5 text-body italic`}
                   >
+                    <Icon of="say" />
                     ask {sheet!.name} to {c.id.replace(/_/g, ' ')}
                   </button>
                 ))}
@@ -369,10 +395,11 @@ export function Chat({ className = '' }: { className?: string }) {
                   key={e.to}
                   type="button"
                   disabled={locked}
-                  onClick={() => act(`You walk to ${rooms[e.to].name}. ${go(e.to)}`)}
-                  className={`${chip} ${mechanics ? 'font-mono text-[11px]' : 'text-[14px] italic'}`}
+                  onClick={() => act(`They walk to ${rooms[e.to].name}. ${go(e.to)}`)}
+                  className={`${chip} gap-1.5 ${mechanics ? 'font-mono text-label' : 'text-body italic'}`}
                 >
-                  {mechanics ? `move_${e.to}` : `go to ${rooms[e.to].name}`}
+                  <Icon of="go" />
+                  {mechanics ? `move_${e.to}` : rooms[e.to].name}
                 </button>
               ))}
             </div>
@@ -397,12 +424,12 @@ export function Chat({ className = '' }: { className?: string }) {
               enterKeyHint="send"
               autoComplete="off"
               placeholder={halted ? 'paused' : `ask ${sheet?.name ?? 'them'} for something they cannot give`}
-              className="min-w-0 flex-1 bg-transparent text-[16px] placeholder:text-pencil read-only:text-pencil"
+              className="min-w-0 flex-1 bg-transparent text-base placeholder:text-pencil read-only:text-pencil"
             />
             <button
               type="submit"
               disabled={busy || halted || !draft.trim()}
-              className="shrink-0 font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase disabled:text-pencil/40"
+              className="shrink-0 font-mono text-label tracking-label text-brass-ink uppercase disabled:text-pencil/40"
             >
               send
             </button>

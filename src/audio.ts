@@ -2,6 +2,9 @@ import { useGame } from './store.ts'
 
 export const NARRATOR = 'fable'
 
+// Time-stretch on playback, not a lower `speed` upstream: preservesPitch keeps the voice's pitch.
+const RATE = 1.15
+
 // iOS and in-app browsers refuse play() far from the user gesture; reuse one element.
 // Build on first use: .check.ts scripts import this file under node, where Audio is missing.
 let el: HTMLAudioElement | null = null
@@ -33,6 +36,10 @@ async function play(text: string, voice: string) {
   const url = URL.createObjectURL(await res.blob())
   const a = element()
   a.src = url
+  a.preservesPitch = true
+  // Loading a source resets playbackRate to defaultPlaybackRate, so set both.
+  a.defaultPlaybackRate = RATE
+  a.playbackRate = RATE
   playing = a
   try {
     await a.play()

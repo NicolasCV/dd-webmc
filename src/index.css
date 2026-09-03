@@ -14,6 +14,14 @@
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "IBM Plex Serif", Georgia, serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --text-micro: 0.625rem;
+  --text-label: 0.6875rem;
+  --text-note: 0.8125rem;
+  --text-body: 0.9375rem;
+  --text-said: 1.0625rem;
+
+  --tracking-label: 0.14em;
 }
 
 /* opsz high and wonk on -- the display face is meant to look drawn, not set. */
@@ -46,6 +54,8 @@ body::before {
 
 @layer base {
   button:not(:disabled), [role="button"]:not(:disabled), summary { cursor: pointer; }
+  /* UA stylesheet sets text-transform: none on form controls, so buttons drop a parent's uppercase. */
+  button { text-transform: inherit; }
   :focus-visible { outline: 2px solid var(--color-oxblood); outline-offset: 2px; border-radius: 1px; }
 }
 

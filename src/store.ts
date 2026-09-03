@@ -74,7 +74,7 @@ const fresh = {
 export const useGame = create<State>((set, get) => ({
   sheet: null,
   muted: false,
-  mechanics: true,
+  mechanics: false,
   // Survives reset()/leave(): an external agent that took the seat keeps it.
   soloAgent: false,
   ...fresh,

@@ -47,8 +47,11 @@ export default function App() {
   }, [live])
 
   const open = (toSeat: boolean) => {
-    dlg.current?.showModal()
-    if (toSeat) seat.current?.scrollIntoView({ block: 'start' })
+    const d = dlg.current
+    if (!d) return
+    d.showModal()
+    // A modal dialog is position:absolute, so scrollIntoView would scroll the page out from under it.
+    d.scrollTop = toSeat ? (seat.current?.offsetTop ?? 0) : 0
   }
 
   return (
@@ -57,7 +60,7 @@ export default function App() {
         <a href="/" className="font-display text-lg tracking-tight text-vellum/90">
           Party of Two
         </a>
-        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 font-mono text-[11px] tracking-[0.14em] text-vellum/55 uppercase">
+        <nav className="flex flex-wrap items-baseline gap-x-5 gap-y-1 font-mono text-label tracking-label text-vellum/55 uppercase">
           <button
             type="button"
             onClick={() => open(false)}
@@ -79,7 +82,7 @@ export default function App() {
 
       {started ? (
         <main className="mx-auto flex w-full max-w-[1400px] min-h-0 flex-1 flex-col gap-5 px-4 pb-4 lg:flex-row lg:gap-8 lg:px-10 lg:pb-10">
-          <nav className="flex shrink-0 gap-5 font-mono text-[11px] tracking-[0.14em] uppercase lg:hidden">
+          <nav className="flex shrink-0 gap-5 font-mono text-label tracking-label uppercase lg:hidden">
             {(['scene', 'sheet'] as const).map((p) => (
               <button
                 key={p}
@@ -102,24 +105,32 @@ export default function App() {
 
       <dialog
         ref={dlg}
-        className="sheet m-auto max-h-[85vh] w-[min(42rem,92vw)] overflow-y-auto border-0 p-6 text-ink backdrop:bg-ink/75 lg:p-8"
+        // Backdrop clicks target the dialog, and so do clicks on its padding: compare against the box.
+        onMouseDown={(e) => {
+          const r = e.currentTarget.getBoundingClientRect()
+          const out =
+            e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom
+          if (out) e.currentTarget.close()
+        }}
+        className="sheet m-auto max-h-[85vh] w-[min(42rem,92vw)] overflow-y-auto border-0 p-6 text-ink backdrop:bg-ink/75 backdrop:backdrop-blur-sm lg:p-8"
       >
         <form method="dialog" className="float-right">
-          <button className="font-mono text-[11px] text-pencil hover:text-oxblood">close ✕</button>
+          <button className="font-mono text-label text-pencil hover:text-oxblood">close ✕</button>
         </form>
 
         <h2 className="font-display text-3xl tracking-tight">How to play</h2>
-        <p className="mt-3 text-[15px] leading-relaxed text-pencil">
+        <p className="mt-3 text-body leading-relaxed text-pencil">
           You play one character; the other one is an agent. Talk to them in the line at the bottom,
-          or take a turn with one of the chips above it. Everything they can do is on the sheet — and
-          everything they <em>cannot</em> is on it too, struck through. A room change turns the set
-          over.
+          or take a turn with one of the chips above it. It plays as a scene; the machinery is
+          hidden until you ask for it. Hit <em>show mechanics</em> in the scene header and the same
+          screen names every tool they hold, struck through the ones they do not — a room change
+          turns the set over.
         </p>
-        <p className="mt-2 text-[15px] leading-relaxed text-pencil">
+        <p className="mt-2 text-body leading-relaxed text-pencil">
           Four rooms, forty turns, about ten minutes. Ask a cold mercenary for reassurance and watch
           what the registry does about it.
         </p>
-        <div className="mt-4 flex gap-5 font-mono text-[11px] tracking-[0.14em] text-brass-ink uppercase sm:hidden">
+        <div className="mt-4 flex gap-5 font-mono text-label tracking-label text-brass-ink uppercase sm:hidden">
           <a href="/why.html">why webmcp</a>
           <a href={REPO}>source</a>
         </div>
@@ -128,13 +139,13 @@ export default function App() {
           <h2 className="font-display text-3xl tracking-tight">Take the agent's seat</h2>
 
           {live ? (
-            <p className="mt-3 text-[15px] leading-relaxed text-pencil">
+            <p className="mt-3 text-body leading-relaxed text-pencil">
               This page has registered {tools.length} tools on{' '}
               <code className="font-mono text-brass-ink">document.modelContext</code>. Any WebMCP
               agent in this browser can list them and call them right now.
             </p>
           ) : (
-            <p className="mt-3 text-[15px] leading-relaxed text-pencil">
+            <p className="mt-3 text-body leading-relaxed text-pencil">
               <code className="font-mono text-brass-ink">document.modelContext</code> is not exposed
               in this browser, so the tools are running on the page's own registry — the game, the
               reconciler and the sheet behave identically, and only the part that genuinely needs the
@@ -146,11 +157,11 @@ export default function App() {
             </p>
           )}
 
-          <ol className="mt-4 list-decimal space-y-2 pl-5 text-[15px] leading-relaxed text-pencil">
+          <ol className="mt-4 list-decimal space-y-2 pl-5 text-body leading-relaxed text-pencil">
             <li>Open this page in a browser your agent can see.</li>
             <li>
               Tell it:{' '}
-              <span className="font-mono text-[13px] text-ink">
+              <span className="font-mono text-note text-ink">
                 “You are the companion in this tab. Play the character using the page's tools, and
                 call wait_for_moment when you have finished acting.”
               </span>
@@ -161,7 +172,7 @@ export default function App() {
           <button
             type="button"
             onClick={toggleSoloAgent}
-            className={`mt-5 inline-flex items-center gap-2 border px-3 py-2 font-mono text-[12px] ${soloAgent ? 'border-oxblood text-oxblood' : 'border-ink/30 text-pencil'}`}
+            className={`mt-5 inline-flex items-center gap-2 border px-3 py-2 font-mono text-note ${soloAgent ? 'border-oxblood text-oxblood' : 'border-ink/30 text-pencil'}`}
           >
             <span>{soloAgent ? '◼' : '◻'}</span>
             {soloAgent
@@ -172,14 +183,14 @@ export default function App() {
           <ul className="mt-6 border-t border-ink/20">
             {tools.map((t) => (
               <li key={t.name} className="border-b border-ink/10 py-2.5">
-                <p className="flex items-baseline justify-between gap-3 font-mono text-[13px] text-brass-ink">
+                <p className="flex items-baseline justify-between gap-3 font-mono text-note text-brass-ink">
                   {t.name}
-                  <span className="font-mono text-[10px] tracking-[0.14em] text-pencil uppercase">
+                  <span className="font-mono text-micro tracking-label text-pencil uppercase">
                     {t.annotations?.readOnlyHint ? 'reads' : 'acts'}
                   </span>
                 </p>
-                <p className="mt-1 text-[14px] leading-snug text-pencil italic">{t.description}</p>
-                <pre className="mt-1 font-mono text-[10px] whitespace-pre-wrap text-pencil">
+                <p className="mt-1 text-body leading-snug text-pencil italic">{t.description}</p>
+                <pre className="mt-1 font-mono text-micro whitespace-pre-wrap text-pencil">
                   {JSON.stringify(toInputSchema(t.inputSchema)?.properties ?? {}, null, 1)}
                 </pre>
               </li>

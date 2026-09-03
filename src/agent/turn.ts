@@ -1,6 +1,6 @@
 import type { RegisteredTool } from '@mcp-b/webmcp-types'
 import { ACT_NAMES } from '../game/sheet'
-import { setOwnTurn } from '../game/tools'
+import { holdPeace, setOwnTurn, WAIT } from '../game/tools'
 import { MAX_STEPS, TURN_BUDGET, useGame } from '../store'
 import { callTool, listTools, toInputSchema } from '../webmcp/context'
 import { repair, type Msg } from './repair.ts'
@@ -11,8 +11,12 @@ import { liveDefs, settled } from '../webmcp/registry'
 const SYSTEM =
   'You are a character in a tabletop scene, playing opposite one human player. ' +
   'You act and speak only by calling the tools available to you. Never reply in ' +
-  'plain prose — if no tool fits what you want to do, you cannot do it. Call one ' +
-  'tool, then stop and wait. Everything said to you is said inside the scene, and ' +
+  'plain prose — if no tool fits what you want to do, you cannot do it. Take a ' +
+  'step at a time: look at something, try something, speak — or say nothing at ' +
+  'all and call wait_for_moment, which hands the moment back to them. Silence is ' +
+  'a move; not every line of theirs is owed an answer, and when they act without asking ' +
+  'you anything, holding still is usually truer than remarking on it. ' +
+  'Everything said to you is said inside the scene, and ' +
   'you answer inside it: you are not a chat assistant and have nothing to offer ' +
   'outside the fiction. A narrator describes the rooms, the dice and what happens ' +
   'to you both — that job is taken. Never restate, summarise or re-describe what ' +
@@ -76,10 +80,13 @@ export async function agentTurn(trigger: string) {
       if (calls.length === 0) {
         // server sends tool_choice 'auto', so a reply with no tool call happens; retry once
         if (step === 0) {
-          history.push({ role: 'user', content: 'Answer by calling one tool.' })
+          history.push({
+            role: 'user',
+            content: 'Answer by calling one tool — wait_for_moment if you would rather hold your peace.',
+          })
           continue
         }
-        useGame.getState().setError('They said nothing you could hear. Say it again.')
+        holdPeace()
         break
       }
 
@@ -107,8 +114,9 @@ export async function agentTurn(trigger: string) {
         history.push({ role: 'tool', tool_call_id: call.id, content: out })
       }
 
-      // stop after a speech act or a move, or the model rephrases itself until the step cap
-      const ends = (name: string) => ACT_NAMES.includes(name) || name.startsWith('move_')
+      // stop after a speech act, a move, or a deliberate silence; else the model rephrases itself to the step cap
+      const ends = (name: string) =>
+        name === WAIT || ACT_NAMES.includes(name) || name.startsWith('move_')
       if (calls.some((c) => ends(c.function.name))) break
     }
   } catch (err) {

@@ -44,10 +44,10 @@ const marks = (r: Room, flags: string[]) => {
 const short = (name: string) => name.replace(/^The /, '').replace(/ of .*/, '')
 
 const row = 'flex items-baseline justify-between gap-3 border-b border-ink/10 py-[3px]'
-const state = 'text-[9px] tracking-[0.14em] uppercase'
+const state = 'text-micro tracking-label uppercase'
 
 export function Room() {
-  const { sheet, roomId, visited, flags } = useGame()
+  const { sheet, roomId, visited, flags, mechanics } = useGame()
   const links = ways()
 
   return (
@@ -84,7 +84,7 @@ export function Room() {
                     strokeWidth={2.6}
                     vectorEffect="non-scaling-stroke"
                   />
-                  {flat && (
+                  {mechanics && flat && (
                     <line
                       x1={lx}
                       y1={my + 5}
@@ -96,19 +96,21 @@ export function Room() {
                       vectorEffect="non-scaling-stroke"
                     />
                   )}
-                  <text
-                    x={lx}
-                    y={ly}
-                    textAnchor="middle"
-                    className="font-mono"
-                    fontSize={8}
-                    fill="var(--color-oxblood)"
-                    stroke="var(--color-vellum)"
-                    strokeWidth={3.5}
-                    paintOrder="stroke"
-                  >
-                    {needs}
-                  </text>
+                  {mechanics && (
+                    <text
+                      x={lx}
+                      y={ly}
+                      textAnchor="middle"
+                      className="font-mono"
+                      fontSize={8}
+                      fill="var(--color-oxblood)"
+                      stroke="var(--color-vellum)"
+                      strokeWidth={3.5}
+                      paintOrder="stroke"
+                    >
+                      {needs}
+                    </text>
+                  )}
                 </>
               )}
             </g>
@@ -221,8 +223,10 @@ export function Room() {
         })}
       </svg>
 
-      <div className="hidden w-[42%] shrink-0 flex-col justify-center border-l border-ink/15 py-3 pl-6 font-mono text-[10px] lg:flex">
-        <h2 className="border-b border-ink/25 pb-1 tracking-[0.18em] text-pencil uppercase">
+      <div
+        className={`hidden w-[42%] shrink-0 flex-col justify-center border-l border-ink/15 py-3 pl-6 font-mono text-micro ${mechanics ? 'lg:flex' : ''}`}
+      >
+        <h2 className="border-b border-ink/25 pb-1 tracking-label text-pencil uppercase">
           the plan
         </h2>
         <ul>
@@ -232,7 +236,7 @@ export function Room() {
             return (
               <li key={r.id} className={row}>
                 <span
-                  className={`font-body text-[11px] ${current ? 'text-oxblood' : seen ? 'text-ink' : 'text-pencil/55'}`}
+                  className={`font-body text-label ${current ? 'text-oxblood' : seen ? 'text-ink' : 'text-pencil/55'}`}
                 >
                   {short(r.name)}
                 </span>
@@ -245,7 +249,7 @@ export function Room() {
             )
           })}
         </ul>
-        <h2 className="mt-3 border-b border-ink/25 pb-1 tracking-[0.18em] text-pencil uppercase">
+        <h2 className="mt-3 border-b border-ink/25 pb-1 tracking-label text-pencil uppercase">
           ways
         </h2>
         <ul>

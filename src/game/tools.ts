@@ -129,16 +129,26 @@ const nextEvent = () =>
     }
   })
 
+export const WAIT = 'wait_for_moment'
+
+/** The companion's turn ending in silence, so the transcript shows a held beat and not a dropped call. */
+export const holdPeace = () =>
+  useGame.getState().say('companion', '…', { act: WAIT, source: 'agent' })
+
 const waitTool: WebMcpTool = {
-  name: 'wait_for_moment',
+  name: WAIT,
   description:
-    "Wait until something happens that you'd notice. Returns what you perceive. " +
-    "Call this when you've finished acting and want to see what unfolds.",
+    "Say and do nothing, and wait until something happens that you'd notice. Returns " +
+    "what you perceive. Call this when you've finished acting, or when the honest answer " +
+    'is to stay quiet, and you want to see what they do next.',
   inputSchema: empty,
   annotations: { readOnlyHint: true },
   // Our own turn would stall 20s here; only external agents get the real block.
   execute: async () => {
-    if (ownTurn) return 'A quiet moment. Nothing yet.'
+    if (ownTurn) {
+      holdPeace()
+      return 'You hold your peace. The moment is theirs now.'
+    }
     return (await nextEvent()) ?? 'A quiet moment. Nothing yet. Call again to keep waiting.'
   },
 }
