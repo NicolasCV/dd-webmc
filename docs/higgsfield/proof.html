@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plate proof sheet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,WONK@9..144,600..700,1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:ital,wght@0,400;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Lifted from src/index.css — if that changes, change this, or the proof lies. */
+      :root {
+        --ink: #14161b;
+        --vellum: #d9d2c2;
+        --blueline: #7c9cc4;
+        --brass-ink: #5e4820;
+        --oxblood: #7a2130;
+        --pencil: #4e4e47;
+        --table: #171310;
+        --mono: "IBM Plex Mono", ui-monospace, monospace;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        padding: 2rem 1.5rem 6rem;
+        color: var(--vellum);
+        background: var(--table);
+        font: 15px/1.6 "IBM Plex Serif", Georgia, serif;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background:
+          linear-gradient(rgb(10 9 8 / 0.55), rgb(10 9 8 / 0.55)),
+          url(../../public/art/table.webp) center / cover no-repeat;
+      }
+      .sheet {
+        position: relative;
+        background-color: var(--vellum);
+        background-image:
+          linear-gradient(to right, color-mix(in srgb, var(--blueline) 20%, transparent) 1px, transparent 1px),
+          linear-gradient(to bottom, color-mix(in srgb, var(--blueline) 20%, transparent) 1px, transparent 1px);
+        background-size: 24px 24px;
+        box-shadow:
+          0 1px 0 rgb(255 255 255 / 0.18) inset,
+          0 2px 5px rgb(0 0 0 / 0.45),
+          0 22px 46px -14px rgb(0 0 0 / 0.8);
+        color: var(--ink);
+      }
+      .plate { filter: sepia(0.22) contrast(1.06); mix-blend-mode: multiply; }
+
+      h1 { font-family: "Fraunces", Georgia, serif; font-size: 2rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+      .lede { max-width: 46rem; color: rgb(217 210 194 / .7); margin: 0 0 2rem; }
+      code { font-family: var(--mono); font-size: .9em; color: #b0873c; }
+
+      #drop {
+        max-width: 46rem;
+        padding: 2rem;
+        border: 1px dashed rgb(217 210 194 / .35);
+        text-align: center;
+        font-family: var(--mono);
+        font-size: .8rem;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: rgb(217 210 194 / .55);
+        cursor: pointer;
+      }
+      #drop.over { border-color: #b0873c; color: #b0873c; }
+      #drop input { display: none; }
+
+      .card { margin-top: 2.5rem; }
+      .name {
+        display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem;
+        font-family: var(--mono); font-size: .8rem; letter-spacing: .1em;
+        border-bottom: 1px solid rgb(217 210 194 / .18); padding-bottom: .4rem;
+      }
+      .verdict.ok { color: #b0873c; }
+      .verdict.bad { color: #d4707f; }
+
+      .slots { display: flex; flex-wrap: wrap; gap: 1.75rem; margin-top: 1.5rem; align-items: flex-start; }
+      .slot > figcaption {
+        font-family: var(--mono); font-size: .625rem; letter-spacing: .14em; text-transform: uppercase;
+        color: rgb(217 210 194 / .45); margin-bottom: .5rem;
+      }
+
+      /* Real sizes from the app. */
+      .avatar { padding: 1rem; }
+      .avatar img { width: 96px; height: 96px; object-fit: cover; object-position: top; display: block; }
+      .startcard { width: 380px; padding: 1rem; }
+      .startcard img { width: 100%; aspect-ratio: 6/5; object-fit: cover; object-position: top; display: block; }
+      .startcard h3 { font-family: "Fraunces", Georgia, serif; font-size: 1.4rem; margin: .6rem 0 0; }
+      .startcard p { font-size: .8rem; font-style: italic; color: var(--pencil); margin: .15rem 0 0; }
+      .band { width: min(704px, 100%); padding: 1.25rem; }
+      /* max-height is a no-op on a correct 2:1 plate; it just stops a wrong-aspect candidate filling the page. */
+      .band img { width: 100%; max-height: 360px; object-fit: contain; display: block; }
+      .band p { font-size: .9rem; color: var(--pencil); margin: .75rem 0 0; }
+      .propslot { width: 340px; padding: 1.25rem; display: flex; gap: 1rem; }
+      .propslot img { width: 180px; flex: 0 0 auto; align-self: flex-start; display: block; }
+      .propslot p { font-size: .85rem; color: var(--pencil); margin: 0; }
+      .raw { width: 200px; }
+      .raw img { width: 100%; display: block; background: #fff; }
+    </style>
+  </head>
+  <body>
+    <h1>Plate proof sheet</h1>
+    <p class="lede">
+      Candidates rendered on the real vellum, at the real sizes, under the real
+      <code>filter: sepia(.22) contrast(1.06); mix-blend-mode: multiply</code>. The gallery card is
+      not the test — this is. Mean luminance should land in <code>165–195</code>; below
+      <code>160</code> the plate goes muddy the moment it is multiplied onto the sheet.
+    </p>
+
+    <label id="drop">
+      drop candidates here — or click to choose
+      <input type="file" accept="image/*" multiple />
+    </label>
+
+    <div id="out"></div>
+
+    <script>
+      const out = document.getElementById('out')
+      const drop = document.getElementById('drop')
+      const input = drop.querySelector('input')
+
+      // Grayscale mean/stddev, same numbers encode.sh prints, so the browser and the shell agree.
+      // Sampled at native size: downsampling averages the hatching away and understates stddev.
+      const stats = (img) => {
+        const w = img.naturalWidth
+        const h = img.naturalHeight
+        const c = Object.assign(document.createElement('canvas'), { width: w, height: h })
+        const ctx = c.getContext('2d', { willReadFrequently: true })
+        ctx.drawImage(img, 0, 0)
+        const d = ctx.getImageData(0, 0, w, h).data
+        let sum = 0, sq = 0
+        for (let i = 0; i < d.length; i += 4) {
+          const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+          sum += g
+          sq += g * g
+        }
+        const px = d.length / 4
+        const mean = sum / px
+        return { mean: Math.round(mean), sd: Math.round(Math.sqrt(sq / px - mean * mean)) }
+      }
+
+      const verdict = ({ mean, sd }) =>
+        mean < 160 || mean > 200
+          ? ['bad', 'mean outside 160–200 — muddy under multiply, reject']
+          : sd < 65
+            ? ['bad', 'stddev under 65 — flat shading, not crosshatch, reject']
+            : ['ok', 'OK']
+
+      const show = (file) => {
+        const url = URL.createObjectURL(file)
+        const probe = new Image()
+        probe.onload = () => {
+          const s = stats(probe)
+          const [cls, note] = verdict(s)
+          const card = document.createElement('div')
+          card.className = 'card'
+          card.innerHTML = `
+            <div class="name">
+              <span>${file.name}</span>
+              <span style="opacity:.5">${probe.naturalWidth}×${probe.naturalHeight} · ${(file.size / 1024).toFixed(0)}K</span>
+              <span style="opacity:.5">mean ${s.mean} · stddev ${s.sd}</span>
+              <span class="verdict ${cls}">${note}</span>
+            </div>
+            <div class="slots">
+              <figure class="slot"><figcaption>sheet avatar · 96px</figcaption>
+                <div class="sheet avatar"><img class="plate" src="${url}" alt=""></div></figure>
+              <figure class="slot"><figcaption>start card · 6:5</figcaption>
+                <div class="sheet startcard"><img class="plate" src="${url}" alt="">
+                  <h3>Name Here</h3><p>the one-line, in italics</p></div></figure>
+              <figure class="slot"><figcaption>prop · 180px</figcaption>
+                <div class="sheet propslot"><img class="plate" src="${url}" alt="">
+                  <p>Concentric script, cut not carved. It names a debt and the year it comes due.</p></div></figure>
+              <figure class="slot" style="flex-basis:100%"><figcaption>room band · 704px</figcaption>
+                <div class="sheet band"><img class="plate" src="${url}" alt="">
+                  <p>Six steps down from a doorway that is no longer there.</p></div></figure>
+              <figure class="slot raw"><figcaption>as delivered · no filter</figcaption>
+                <img src="${url}" alt=""></figure>
+            </div>`
+          out.prepend(card)
+        }
+        probe.src = url
+      }
+
+      const take = (files) => [...files].filter((f) => f.type.startsWith('image/')).forEach(show)
+
+      input.addEventListener('change', () => take(input.files))
+      drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over') })
+      drop.addEventListener('dragleave', () => drop.classList.remove('over'))
+      drop.addEventListener('drop', (e) => {
+        e.preventDefault()
+        drop.classList.remove('over')
+        take(e.dataTransfer.files)
+      })
+    </script>
+  </body>
+</html>
