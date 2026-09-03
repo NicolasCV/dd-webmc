@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# The part of this site worth reading is not in the HTML. It is a tool registry
+# on document.modelContext, rebuilt as the game changes. See /llms.txt.

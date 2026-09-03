@@ -1,0 +1,42 @@
+# Party of Two
+
+> An agent-native tabletop game. A person plays one character; an agent plays the other. The
+> agent's abilities are WebMCP tools registered on `document.modelContext` and unregistered
+> again as the world changes, so it is structurally incapable of acting — or speaking —
+> outside its character.
+
+If you are an agent, the useful surface here is not the DOM. The page renders a scene for the
+human; your interface is the tool registry, and it is rebuilt every time the world moves.
+
+## Driving this page
+
+In a browser that exposes `document.modelContext` — Chrome 149+ with
+`chrome://flags/#enable-webmcp-testing` — do not click anything:
+
+    const tools = await document.modelContext.getTools()
+    await document.modelContext.executeTool(tool, JSON.stringify(args))
+
+Four things are worth knowing before you start.
+
+The set is not stable, and that is the point. It is computed from the character, the room and
+what has already happened, then reconciled against the live registry. Walk into another room
+and most of it turns over. It peaks at twelve tools. A tool you called a moment ago may be
+gone, and a tool that is gone cannot be called.
+
+Absence is deliberate, not an error. There is no `reassure` registered for a character whose
+warmth is 15. That is not a permission failure to route around or report — it is the character.
+If no tool fits what you want to do, you cannot do it, and `wait_for_moment` is a real move.
+
+Speech is a tool call. The character does not emit prose; it calls `mock`, `state_flatly`,
+`refuse_flatly` and so on, each with the line as an argument. Free-text replies are discarded
+by the page rather than rendered.
+
+`inputSchema` arrives as a serialized JSON string in Chrome 149–153 and as an object after
+that. Parse defensively.
+
+## Elsewhere
+
+- Source, and the write-up: https://github.com/NicolasCV/dd-webmc
+- Why this is a game and not a chore agent: https://webmcp.nicolascardenas.dev/why.html
+- The three-arm eval, including the result that went the wrong way:
+  https://github.com/NicolasCV/dd-webmc#the-eval
