@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { MAX_ACTS, MAX_SKILLS, validate } from './sheet.ts'
 
 const warmOnlyNames = ['reassure', 'encourage', 'apologize', 'admit_fear', 'share_memory']
+const provokeNames = ['mock', 'threaten', 'goad']
 
 const every = [
   'state_flatly', 'insist', 'change_subject', 'dismiss', 'refuse_flatly',
@@ -34,9 +35,9 @@ assert.ok(!cold.speechActs.some((a) => warmOnlyNames.includes(a.name)), 'gated a
 assert.ok(cold.speechActs.some((a) => a.name === 'mock'), 'nerve 90 keeps provoke')
 
 // Timid: provoke closed too, leaving only the always-open families.
-const provokeFirst = [...every].sort((a, b) => Number(['mock', 'threaten', 'goad'].includes(b.name)) - Number(['mock', 'threaten', 'goad'].includes(a.name)))
+const provokeFirst = [...every].sort((a, b) => Number(provokeNames.includes(b.name)) - Number(provokeNames.includes(a.name)))
 const timid = validate({ speechActs: provokeFirst, disposition: { warmth: 20, nerve: 10 } })
-assert.ok(!timid.speechActs.some((a) => ['mock', 'threaten', 'goad'].includes(a.name)), 'low nerve closes provoke')
+assert.ok(!timid.speechActs.some((a) => provokeNames.includes(a.name)), 'low nerve closes provoke')
 
 // A character with no legal way to speak is a dead end, not a character.
 const mute = validate({ disposition: { warmth: 0, nerve: 0 }, speechActs: [{ name: 'reassure', description: 'x' }] })

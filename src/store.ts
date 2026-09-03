@@ -11,7 +11,7 @@ export type Bubble = {
   /** Tool caller: external agent, or the player's own button. */
   source?: 'agent' | 'you'
   args?: string
-  roll?: { of: string; d20: number; total: number; dc: number; ok: boolean }
+  roll?: Roll & { of: string }
 }
 
 export const MAX_STEPS = 5
@@ -94,7 +94,7 @@ export const useGame = create<State>((set, get) => ({
   setBusy: (busy) => set({ busy }),
   setError: (error) => set({ error }),
   // Keeps busy: the in-flight loop is still awaiting its fetch and clears busy itself.
-  halt: () => set((s) => ({ halted: !s.halted })),
+  halt: () => set({ halted: true }),
   resume: () => set({ halted: false }),
   end: () => set({ ended: true }),
   reset: () => set({ ...fresh, sheet: get().sheet }),

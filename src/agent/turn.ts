@@ -3,9 +3,8 @@ import { ACT_NAMES } from '../game/sheet'
 import { holdPeace, setOwnTurn, WAIT } from '../game/tools'
 import { MAX_STEPS, TURN_BUDGET, useGame } from '../store'
 import { callTool, listTools, toInputSchema } from '../webmcp/context'
-import { repair, type Msg } from './repair.ts'
 import { liveDefs, settled } from '../webmcp/registry'
-
+import { repair, type Msg } from './repair'
 
 // no personality here on purpose: the registered tools and their descriptions make the character
 const SYSTEM =
@@ -23,7 +22,6 @@ const SYSTEM =
   'the narrator has just said; say only what your character would add to it.'
 
 let history: Msg[] = [{ role: 'system', content: SYSTEM }]
-
 
 export const resetHistory = () => {
   history = [{ role: 'system', content: SYSTEM }]
@@ -105,6 +103,7 @@ export async function agentTurn(trigger: string) {
           try {
             args = JSON.parse(call.function.arguments || '{}')
           } catch {
+            /* malformed args reach the tool as {} */
           }
           out = await callTool(tool, args, liveDefs())
         } catch (err) {

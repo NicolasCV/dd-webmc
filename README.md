@@ -1,13 +1,39 @@
 # Party of Two
 
-**Play it:** <deploy URL — fill in before submitting>
-
-An agent-native tabletop game. You play one character; an AI agent plays the other.
-Its abilities are [WebMCP](https://github.com/webmachinelearning/webmcp) tools, registered
-and unregistered from world state, so it is *structurally* incapable of acting outside its
+An agent-native tabletop game. You play one character; an AI agent plays the other. Its
+abilities are [WebMCP](https://github.com/webmachinelearning/webmcp) tools, registered and
+unregistered from world state, so it is *structurally* incapable of acting outside its
 character — including in what it can say.
 
 > **A character is a set of registered tools. Change the character, change the API.**
+
+### **[Play it → webmcp.nicolascardenas.dev](https://webmcp.nicolascardenas.dev/)**
+
+[Why WebMCP](https://webmcp.nicolascardenas.dev/why.html) · [The eval, including the result
+that goes the wrong way](#the-result-that-goes-the-wrong-way) · [What leaked](#what-leaked) ·
+[Limits](#limits)
+
+No flag, no extension, no key — it plays in any browser. Chrome with
+`chrome://flags/#enable-webmcp-testing` additionally gets the real `document.modelContext`,
+which is what lets an outside agent [take the second seat](#take-the-agents-seat). Without it
+the identical contract runs on a local `Map`, and the masthead names which one is live.
+
+![the landing: three preset characters, each card showing what it registers and what its
+disposition closes](docs/start.png)
+
+## Sixty seconds, if that is all you have
+
+1. Pick **Brakka**. His card reads *support · needs warmth 61*. He has 15.
+2. Turn on **mechanics** in the scene header. It starts off, so a first-time player meets a
+   scene rather than a control panel; on, every chip and every row on the sheet carries the
+   tool name an agent actually sees.
+3. Ask him for reassurance. He mocks you — not because he declined, but because there is no
+   `reassure` on his sheet to call. Watch the transcript: every line he says is a tool call.
+4. Call `force_door`, then walk through to the Long Hall. The sheet strikes rules through in
+   oxblood as tools unregister and stamps in the ones the new room affords. **That shot is
+   the whole argument** — the world changed, so the API changed.
+5. The masthead reads `document.modelContext · 12`. That number is the live registry, not a
+   copy of it.
 
 ---
 
@@ -91,8 +117,6 @@ outlives it by 1100ms so the loss registers.
 
 *This was possible a moment ago and now it isn't.* Nobody needs a legend for that.
 
-<!-- still to shoot: one frame from the 1100ms strike window, cropped to the right-hand panel -->
-
 Walk into the next room and the whole set turns over: the props you could examine are gone,
 the exits are different, and the door you just shouldered open has taken `force_door` with
 it. The registry is reconciled against a set computed from world state, and the sheet reads
@@ -117,10 +141,7 @@ companion's sheet can seal a room.
 Cooperation here is structural rather than encouraged. Nobody is being polite; the tools
 genuinely aren't there.
 
-![the landing: three preset characters, each card showing what it registers and what its
-disposition closes](docs/start.png)
-
-A judge who works on agent platforms sees `state_flatly` set in mono on a hand-ruled sheet
+A reader who works on agent platforms sees `state_flatly` set in mono on a hand-ruled sheet
 and has the whole idea before reading a word of this file. Fiction renders in serif, anything
 that is literally a tool name or a literal value renders in mono, and the rule is absolute —
 which is what makes the interface teach itself.
@@ -137,10 +158,14 @@ and only the part that genuinely needs the browser — an outside agent discover
 is missing. The masthead and the sheet both name which registry is in use, so the difference is
 stated rather than hidden. A dead page demonstrates nothing.
 
+The deployed build at **[webmcp.nicolascardenas.dev](https://webmcp.nicolascardenas.dev/)**
+needs none of this — it is the same tree, and no key of yours. To run it locally:
+
 ```sh
 npm install
-echo "OPENAI_API_KEY=sk-..." > .env
-npx netlify dev          # serves the app and the functions together
+cp .env.example .env      # then add your OpenAI key
+npx netlify dev           # serves the app and the functions together
+npm run check             # the three invariants, ~393k cases, no key needed
 ```
 
 The key never reaches the browser. It has no `VITE_` prefix, so Vite cannot inline it into
@@ -330,10 +355,11 @@ not override the model's own behaviour about being a model: `state_flatly` can b
 prompt asks for the scene to be treated as the whole world; that is a prompt, and it has a
 prompt's reliability.
 
-The deployed `/api/chat` is an unauthenticated proxy to OpenAI on my key. It caps message
-count, payload size and tool count, but the real mitigation is a hard monthly spend limit on
-the key, set in the OpenAI dashboard, and that is mine to set rather than something the code
-can enforce.
+The deployed `/api/chat` is a proxy to OpenAI on my key. The three functions reject any
+request whose `Origin` is not this site, and cap message count, payload size and tool count —
+which stops casual `curl` and other pages, and does not stop a spoofed header, because no
+origin check can. The real mitigation is a hard monthly spend limit on the key, set in the
+OpenAI dashboard, and that is mine to set rather than something the code can enforce.
 
 And within an act, the description is still load-bearing. Every leak found so far got through
 a description that forgot to say what the act is not — see [What leaked](#what-leaked). The

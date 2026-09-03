@@ -1,3 +1,5 @@
+import { denyCrossOrigin } from './lib/origin.ts'
+
 export const config = { path: '/api/tts' }
 
 // tts-1, not HD: latency matters more than fidelity for a demo.
@@ -5,6 +7,8 @@ const MODEL = process.env.TTS_MODEL ?? 'tts-1'
 const VOICES = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
 
 export default async (req: Request): Promise<Response> => {
+  const denied = denyCrossOrigin(req)
+  if (denied) return denied
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 })
   const key = process.env.OPENAI_API_KEY
   if (!key) return new Response('OPENAI_API_KEY is not set', { status: 500 })

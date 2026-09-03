@@ -79,7 +79,7 @@ function wakeSomething() {
 }
 
 /** DC bump for an unskilled player attempt. Keeps every room passable. */
-export const UNTRAINED = 2
+const UNTRAINED = 2
 export const playerAttempt = (c: Challenge) =>
   attempt(c, { str: 10, dex: 10, wis: 10, cha: 10 }, UNTRAINED)
 

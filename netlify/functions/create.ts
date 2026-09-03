@@ -1,3 +1,5 @@
+import { denyCrossOrigin } from './lib/origin.ts'
+
 export const config = { path: '/api/create' }
 
 const MODEL = process.env.CREATE_MODEL ?? 'gpt-5-mini'
@@ -80,6 +82,8 @@ useless; "Say something cutting - you do this when someone is being soft, especi
 when they're scared" is the job. Two or three sentences each.`
 
 export default async (req: Request): Promise<Response> => {
+  const denied = denyCrossOrigin(req)
+  if (denied) return denied
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 })
   const key = process.env.OPENAI_API_KEY
   if (!key) return new Response('OPENAI_API_KEY is not set', { status: 500 })

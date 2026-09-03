@@ -8,7 +8,7 @@ import type {
 /** registerTool overloads all require inputSchema. */
 export type WebMcpTool = ModelContextTool & { inputSchema: InputSchema }
 
-export const supported = () => !!(document.modelContext as ChromeModelContext | undefined)
+export const supported = () => !!document.modelContext
 
 export const modelContext = (): ChromeModelContext =>
   (document.modelContext as ChromeModelContext | undefined) ?? local
@@ -31,12 +31,11 @@ export async function callTool(
   tool: RegisteredTool,
   args: unknown,
   defs: WebMcpTool[],
-  signal?: AbortSignal,
 ): Promise<string> {
   const mc = modelContext()
   if (mc.executeTool) {
     // executeTool takes a JSON string in @mcp-b/webmcp-types@5.0.1 and shipped Chrome; spec #246 says object.
-    const out = await mc.executeTool(tool, JSON.stringify(args ?? {}), { signal })
+    const out = await mc.executeTool(tool, JSON.stringify(args ?? {}))
     // null means the page navigated mid-call and the tool already ran. Do not retry it locally.
     return out ?? 'ok'
   }

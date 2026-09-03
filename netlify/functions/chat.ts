@@ -1,3 +1,5 @@
+import { denyCrossOrigin } from './lib/origin.ts'
+
 export const config = { path: '/api/chat' }
 
 // eval overrides CHAT_MODEL to compare setups.
@@ -7,6 +9,8 @@ const MODEL = process.env.CHAT_MODEL ?? 'gpt-5-mini'
 const MAX_COMPLETION_TOKENS = 1500
 
 export default async (req: Request): Promise<Response> => {
+  const denied = denyCrossOrigin(req)
+  if (denied) return denied
   if (req.method !== 'POST') return new Response('method not allowed', { status: 405 })
 
   const key = process.env.OPENAI_API_KEY

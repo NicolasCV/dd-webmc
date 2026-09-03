@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict'
 import { presets } from './presets.ts'
 import { computeTools } from './tools.ts'
-import { rooms } from './world.ts'
+import { rooms, START } from './world.ts'
 
 const CEILING = 12
 
@@ -25,23 +25,21 @@ for (const sheet of presets)
     }
 
 assert.ok(worst.n <= CEILING, `live tools peaked at ${worst.n} (${worst.where}), ceiling is ${CEILING}`)
-assert.equal(computeTools(null, 'landing', []).length, 0, 'no sheet, no tools')
+assert.equal(computeTools(null, START, []).length, 0, 'no sheet, no tools')
 
-// Every room reachable and every room exitable, whoever you brought.
-for (const sheet of presets) {
-  const seen = new Set(['landing'])
-  for (const queue = ['landing']; queue.length; ) {
-    const id = queue.shift()!
-    const room = rooms[id]
-    assert.ok(room.exits.length > 0, `${id} is a dead end`)
-    // Anything the companion cannot open, the player can attempt themselves.
-    for (const e of room.exits)
-      if (!seen.has(e.to)) {
-        seen.add(e.to)
-        queue.push(e.to)
-      }
-  }
-  assert.equal(seen.size, Object.keys(rooms).length, `${sheet.name} cannot reach every room`)
+// Every room reachable and every room exitable. Locked exits count: anything the
+// companion cannot open, the player can attempt themselves.
+const seen = new Set([START])
+const queue = [START]
+while (queue.length) {
+  const room = rooms[queue.shift()!]
+  assert.ok(room.exits.length > 0, `${room.id} is a dead end`)
+  for (const e of room.exits)
+    if (!seen.has(e.to)) {
+      seen.add(e.to)
+      queue.push(e.to)
+    }
 }
+assert.equal(seen.size, Object.keys(rooms).length, 'not every room is reachable')
 
 console.log(`tools.check.ts ok — ${cases} combinations, peak ${worst.n} (${worst.where})`)

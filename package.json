@@ -5,6 +5,7 @@
   "license": "MIT",
   "description": "An agent-native tabletop game whose companion's abilities are WebMCP tools, registered and unregistered from world state.",
   "repository": { "type": "git", "url": "git+https://github.com/NicolasCV/dd-webmc.git" },
+  "homepage": "https://webmcp.nicolascardenas.dev/",
   "engines": { "node": ">=22.6" },
   "type": "module",
   "scripts": {

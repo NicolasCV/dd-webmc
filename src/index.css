@@ -53,7 +53,7 @@ body::before {
 }
 
 @layer base {
-  button:not(:disabled), [role="button"]:not(:disabled), summary { cursor: pointer; }
+  button:not(:disabled) { cursor: pointer; }
   /* UA stylesheet sets text-transform: none on form controls, so buttons drop a parent's uppercase. */
   button { text-transform: inherit; }
   :focus-visible { outline: 2px solid var(--color-oxblood); outline-offset: 2px; border-radius: 1px; }
