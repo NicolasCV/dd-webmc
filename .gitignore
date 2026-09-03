@@ -13,3 +13,9 @@ dist
 !.env.example
 .netlify
 deno.lock
+
+# Generation masters: the plates in public/art are what the build reads.
+docs/higgsfield/masters/
+
+# Handoff notes live with the session, not the repo.
+docs/silent-turn.md

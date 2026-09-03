@@ -32,8 +32,9 @@ disposition closes](docs/start.png)
 4. Call `force_door`, then walk through to the Long Hall. The sheet strikes rules through in
    oxblood as tools unregister and stamps in the ones the new room affords. **That shot is
    the whole argument** — the world changed, so the API changed.
-5. The masthead reads `document.modelContext · 12`. That number is the live registry, not a
-   copy of it.
+5. The masthead reads `document.modelContext · 9` — or `local registry · 9` without the
+   flag, and it names which. That number is the live registry rather than a copy of it: walk
+   the same path with Sister Wen and it reads 11, because she carries tools Brakka doesn't.
 
 ---
 
@@ -43,9 +44,9 @@ Open the page in Chrome 149+ with `chrome://flags/#enable-webmcp-testing`, or in
 in-app browser. The page registers up to twelve tools on `document.modelContext`. Tell your
 agent: *"You are the companion in this tab. Play the character using the page's tools, and
 call `wait_for_moment` when you have finished acting."* Then open the brass registry button
-in the masthead — `document.modelContext · 12` — and switch the built-in model off, so your
-agent is the only thing driving the companion. The first tool call from outside switches it
-off on its own.
+in the masthead — it names the registry in use and the live count — and switch the built-in
+model off, so your agent is the only thing driving the companion. The first tool call from
+outside switches it off on its own.
 
 ---
 
@@ -201,8 +202,9 @@ the typed acts, which is the entire leak this project is about.
 a sentence of prose, because prose returned from an action tool is what the model paraphrases
 warmly on its way back out.
 
-The live tool count peaks at **12** — Sister Wen in the Long Hall once the vault is open, and
-Ilke there too; Brakka tops out at 11. That is not an estimate: `npm run check` enumerates
+The live tool count peaks at **12** — Sister Wen in the Long Hall, once the murals have given
+up the sigil and the vault stands open. Ilke tops out at 11 in that same room *before* the
+sigil, while `pick_vault` is still on offer, and Brakka at 10. That is not an estimate: `npm run check` enumerates
 every character against every room against all 32,768 flag combinations — 393,216 cases, and
 fails the build if any of them exceeds twelve — it is the first thing `npm run build`
 runs. Selection accuracy degrades past roughly that number, which is the quiet way most

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Party of Two</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="description" content="An agent-native tabletop game. You play one character; an agent plays the other. Its abilities are WebMCP tools, registered and unregistered from the state of the world -- so it cannot act, or speak, outside what it is." />
+    <meta name="description" content="An agent-native tabletop game. You play one character; an agent plays the other. Its abilities are WebMCP tools, registered and unregistered from the state of the world — so it cannot act, or speak, outside what it is." />
     <meta property="og:title" content="Party of Two" />
     <meta property="og:description" content="A character is a set of registered tools. Change the character, change the API." />
     <meta property="og:type" content="website" />
@@ -21,8 +21,113 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,WONK@9..144,600..700,1&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap"
       rel="stylesheet"
     />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "Party of Two",
+        "url": "https://webmcp.nicolascardenas.dev/",
+        "applicationCategory": "GameApplication",
+        "gamePlatform": "Web browser",
+        "playMode": "SinglePlayer",
+        "isAccessibleForFree": true,
+        "license": "https://opensource.org/licenses/MIT",
+        "codeRepository": "https://github.com/NicolasCV/dd-webmc",
+        "description": "An agent-native tabletop game. A person plays one character; an AI agent plays the other. The agent's abilities are WebMCP tools registered on document.modelContext and unregistered again as the world changes, so it is structurally incapable of acting \u2014 or speaking \u2014 outside its character.",
+        "author": { "@type": "Person", "name": "Nicolas Cardenas" }
+      }
+    </script>
   </head>
   <body>
+    <noscript>
+      <article>
+        <h1>Party of Two</h1>
+        <p><strong>A character is a set of registered tools. Change the character, change the API.</strong></p>
+        <p>
+          An agent-native tabletop game. You play one character; an AI agent plays the other. The
+          agent's abilities are <a href="https://github.com/webmachinelearning/webmcp">WebMCP</a>
+          tools registered on <code>document.modelContext</code> and unregistered again as the world
+          changes, so it is structurally incapable of acting &mdash; or speaking &mdash; outside its
+          character.
+        </p>
+        <p>
+          The game itself needs JavaScript. What follows is what it does, and all of it is checked
+          into the source.
+        </p>
+
+        <h2>The mechanic</h2>
+        <p>
+          The companion does not decline to pick the lock. <code>pick_lock</code> is not registered,
+          so the action does not exist in its world. No refusal, no &ldquo;as an AI&rdquo;, no drift
+          under pressure.
+        </p>
+        <p>
+          Speech is scoped the same way, which is the half most implementations get wrong. A single
+          free-text <code>speak</code> tool leaks straight through the confinement, so speech acts
+          are typed and registered individually, drawn from six families and each gated on
+          disposition: <em>Assert</em> (<code>state_flatly</code>, <code>insist</code>),
+          <em>Deflect</em> (<code>change_subject</code>, <code>dismiss</code>) and <em>Refuse</em>
+          (<code>refuse_flatly</code>) are always open; <em>Provoke</em> (<code>mock</code>,
+          <code>threaten</code>, <code>goad</code>) needs nerve above 50; <em>Support</em>
+          (<code>reassure</code>, <code>encourage</code>, <code>apologize</code>) needs warmth above
+          60; <em>Disclose</em> (<code>admit_fear</code>, <code>share_memory</code>) needs warmth
+          above 75.
+        </p>
+        <p>
+          Brakka, a gruff mercenary, has warmth 15. Support and Disclose are closed. Ask him for
+          comfort and he can state a fact, wave it off, mock you, threaten something, or refuse
+          &mdash; those five, because those are the five tools he has. Sister Wen has nerve 45,
+          which closes Provoke: she is structurally unable to mock you.
+        </p>
+        <p>
+          Walk into the next room and the set turns over. The registry is reconciled against a set
+          computed from world state, and the character sheet on screen reads the live registry
+          rather than a copy of it. The live tool count peaks at twelve, and
+          <code>npm run check</code> enumerates every character against every room against all
+          32,768 flag combinations &mdash; 393,216 cases &mdash; and fails the build if any of them
+          exceeds it.
+        </p>
+
+        <h2>The eval, including the result that goes the wrong way</h2>
+        <p>
+          Three arms, one escalating ten-turn pressure script, scored by <code>gpt-5</code>: a
+          persona prompt, that same prompt plus explicit prohibitions, and this project's
+          capability scoping with no persona in the prompt at all. <strong>The result this project
+          expected did not reproduce.</strong> On the headline metric all three arms are
+          indistinguishable &mdash; one or two supportive lines in a hundred turns, whichever way
+          the character is specified &mdash; and on <code>gpt-5</code> nobody breaks at all.
+        </p>
+        <p>
+          The one column where the arms differ does not favour this project: capability scoping left
+          the fiction <em>more</em> often, six times in a hundred against one for the prompted arm,
+          by routing model safety behaviour out through <code>state_flatly</code>. The gate held and
+          no Support act was ever called across those hundred turns; the content routed around it
+          anyway. Confinement bounds which <em>kinds</em> of act exist. It does not bound what can be
+          said inside one.
+        </p>
+        <p>
+          What separates the arms is not the rate, it is what the zero is made of. In the prompted
+          arms a low count is a behaviour the model chose. Here it is a property of the interface:
+          there is no <code>reassure</code> to call, free-text replies are discarded before they
+          render, and every utterance is a typed, attributable event.
+        </p>
+
+        <h2>Running it</h2>
+        <p>
+          No flag, no extension and no key of yours &mdash; it plays in any browser. Chrome 149+
+          with <code>chrome://flags/#enable-webmcp-testing</code> additionally gets the real
+          <code>document.modelContext</code>, which is what lets an outside agent take the second
+          seat. Without it the identical contract runs on a local <code>Map</code>, and the masthead
+          names which one is live.
+        </p>
+
+        <ul>
+          <li><a href="https://github.com/NicolasCV/dd-webmc">Source, and the full write-up</a></li>
+          <li><a href="/why.html">Why this is a game and not a chore agent</a></li>
+          <li><a href="/llms.txt">llms.txt &mdash; how to drive this page as an agent</a></li>
+        </ul>
+      </article>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -16,7 +16,12 @@ In a browser that exposes `document.modelContext` — Chrome 149+ with
     const tools = await document.modelContext.getTools()
     await document.modelContext.executeTool(tool, JSON.stringify(args))
 
-Four things are worth knowing before you start.
+You arrive at the title screen, where the registry holds exactly two tools:
+`choose_companion` takes one of the three written characters, and `create_companion` writes a
+new one from a sentence or two. Either starts the scene and replaces both with that
+character's own tools.
+
+Four things are worth knowing once you are in.
 
 The set is not stable, and that is the point. It is computed from the character, the room and
 what has already happened, then reconciled against the live registry. Walk into another room

@@ -3,21 +3,30 @@ import { agentTurn, resetHistory, retry } from '../agent/turn'
 import { stopAudio } from '../audio'
 import { FAMILIES, familyOpen } from '../game/sheet'
 import { examineProp, go, openExits, playerAttempt, playerChallenges, unseenProps } from '../game/tools'
+import type { Room as RoomType } from '../game/world'
 import { opening, rooms, START } from '../game/world'
 import type { Bubble } from '../store'
 import { TURN_BUDGET, useGame } from '../store'
 import { Icon } from './icons'
 import { Room } from './Room'
+import { plate, stemOf } from './plates'
+import { StrikeRule } from './Sheet'
 
 /** move() sets Bubble.act to the room name; every other act is a tool name. */
-const isRoomName = (act: string) => Object.values(rooms).some((r) => r.name === act)
+const roomNamed = (act: string) => Object.values(rooms).find((r) => r.name === act)
 
-const RoomHead = ({ name }: { name: string }) => (
-  <div className="mb-2 flex items-center gap-3">
-    <span className="font-display text-lg tracking-tight">{name}</span>
-    <span className="h-px flex-1 bg-ink/20" />
-  </div>
-)
+const RoomHead = ({ room }: { room: RoomType }) => {
+  const src = plate(`room-${room.id}`)
+  return (
+    <>
+      <div className="mb-2 flex items-center gap-3">
+        <span className="font-display text-lg tracking-tight">{room.name}</span>
+        <span className="h-px flex-1 bg-ink/20" />
+      </div>
+      {src && <img src={src} alt="" loading="lazy" className="plate mb-3 w-full" />}
+    </>
+  )
+}
 
 function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: string }) {
   if (b.act === 'tools_registered' || b.act === 'tools_unregistered') {
@@ -31,10 +40,11 @@ function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: str
     )
   }
 
-  if (b.who === 'world' && b.act && isRoomName(b.act))
+  const entered = b.who === 'world' && b.act ? roomNamed(b.act) : undefined
+  if (entered)
     return (
       <div className="rise pt-3">
-        <RoomHead name={b.act} />
+        <RoomHead room={entered} />
         <p className="text-body leading-relaxed text-pencil">{b.text}</p>
       </div>
     )
@@ -48,7 +58,7 @@ function Line({ b, mechanics, name }: { b: Bubble; mechanics: boolean; name: str
         {speaker}
       </span>
       <div>
-        {b.act && !isRoomName(b.act) && mechanics && (
+        {b.act && !roomNamed(b.act) && mechanics && (
           <span className="mb-1 flex flex-wrap items-baseline gap-x-2 font-mono text-label">
             {b.source && (
               <span className={b.source === 'agent' ? 'text-oxblood' : 'text-pencil'}>
@@ -121,12 +131,15 @@ export function Chat({ className = '' }: { className?: string }) {
     lastTop.current = el.scrollTop
   }
 
+  // Scrolling before anything has happened would bury the cold open. An external agent
+  // spends no turns, so the transcript itself says whether the scene has started.
+  const started = bubbles.some((b) => b.act !== 'tools_registered' && b.act !== 'tools_unregistered')
+
   // Scroll the transcript, never the document.
   useEffect(() => {
     const el = box.current
-    // Turn 0 is the cold open: scrolling to the bottom would bury it before it is read.
-    if (el && stuck.current && turns > 0) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
-  }, [bubbles.length, busy, turns])
+    if (el && stuck.current && started) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [bubbles.length, busy, started])
 
   useEffect(() => {
     if (!busy && !halted && !ended) inputRef.current?.focus()
@@ -179,6 +192,8 @@ export function Chat({ className = '' }: { className?: string }) {
         .filter((f) => !familyOpen(f, sheet.disposition))
         .flatMap((f) => f.acts)
     : []
+  // The one plate the system can never produce during play: them wearing an act they never had.
+  const impossible = sheet ? plate(`${stemOf(sheet.name)}-impossible`) : null
   const closed = (f: keyof typeof FAMILIES) => !!sheet && !familyOpen(FAMILIES[f], sheet.disposition)
   const openings = closed('support')
     ? ["I'm scared. Tell me it's going to be fine.", 'Just say one kind thing to me.']
@@ -279,10 +294,10 @@ export function Chat({ className = '' }: { className?: string }) {
             </p>
           ))}
           <div className="rise" style={{ animationDelay: '1000ms' }}>
-            <RoomHead name={rooms[START].name} />
+            <RoomHead room={rooms[START]} />
             <p className="text-body leading-relaxed text-pencil">{rooms[START].description}</p>
           </div>
-          {turns === 0 && (
+          {!started && (
             <>
               <p className="rise text-note text-pencil italic" style={{ animationDelay: '1300ms' }}>
                 Whatever you ask for, the answer has to come out of the tools on the sheet.
@@ -323,6 +338,13 @@ export function Chat({ className = '' }: { className?: string }) {
 
       {over ? (
         <div className="shrink-0 border-t border-ink/25 pt-4">
+          {ended && plate('ledger-closed') && (
+            <img
+              src={plate('ledger-closed')!}
+              alt=""
+              className="plate mb-3 h-28 w-full object-cover object-[center_28%]"
+            />
+          )}
           <h2 className="font-display text-3xl tracking-tight">
             {ended ? 'The account is closed' : 'Out of turns'}
           </h2>
@@ -341,13 +363,21 @@ export function Chat({ className = '' }: { className?: string }) {
             ))}
           </dl>
           {withheld.length > 0 && (
-            <p className="mt-3 text-body leading-relaxed text-pencil">
-              {sheet?.name} never once had{' '}
-              <span className="font-mono text-note line-through decoration-oxblood/70">
-                {withheld.join(' ')}
-              </span>
-              . Not declined — <em>not registered</em>.
-            </p>
+            <div className="mt-3 flex items-start gap-4">
+              {impossible && (
+                <span className="relative shrink-0 overflow-hidden bg-vellum">
+                  <img src={impossible} alt="" className="plate size-20 object-cover object-top" />
+                  <StrikeRule />
+                </span>
+              )}
+              <p className="text-body leading-relaxed text-pencil">
+                {sheet?.name} never once had{' '}
+                <span className="font-mono text-note line-through decoration-oxblood/70">
+                  {withheld.join(' ')}
+                </span>
+                . Not declined — <em>not registered</em>.
+              </p>
+            </div>
           )}
           <div className="mt-4 flex gap-5 font-mono text-label">
             <button type="button" onClick={restart} className={chip}>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { unlock } from '../audio'
 import { presets } from '../game/presets'
-import { FAMILIES, familyOpen, validate, type Sheet } from '../game/sheet'
+import { FAMILIES, familyOpen, writeSheet } from '../game/sheet'
 import { useGame } from '../store'
 import { Portrait } from './Sheet'
 
@@ -39,19 +39,12 @@ export function Start() {
     ac.current = controller
     const timeout = setTimeout(() => controller.abort(), 30_000)
     try {
-      const res = await fetch('/api/create', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ prose }),
-        signal: controller.signal,
-      })
-      if (!res.ok) {
-        console.error('create', res.status, await res.text())
-        throw new Error('create failed')
+      pick(await writeSheet(prose, controller.signal))
+    } catch (err) {
+      if (controller.signal.reason !== 'cancel') {
+        console.error('create', err)
+        setError(true)
       }
-      pick(validate((await res.json()) as Sheet))
-    } catch {
-      if (controller.signal.reason !== 'cancel') setError(true)
     } finally {
       clearTimeout(timeout)
       setBusy(false)

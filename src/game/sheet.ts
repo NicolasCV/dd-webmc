@@ -82,3 +82,14 @@ export function validate(raw: unknown): Sheet {
     },
   }
 }
+
+export async function writeSheet(prose: string, signal?: AbortSignal): Promise<Sheet> {
+  const res = await fetch('/api/create', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ prose }),
+    signal,
+  })
+  if (!res.ok) throw new Error(`create ${res.status}: ${await res.text()}`)
+  return validate(await res.json())
+}

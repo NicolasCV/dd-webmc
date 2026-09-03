@@ -25,7 +25,11 @@ for (const sheet of presets)
     }
 
 assert.ok(worst.n <= CEILING, `live tools peaked at ${worst.n} (${worst.where}), ceiling is ${CEILING}`)
-assert.equal(computeTools(null, START, []).length, 0, 'no sheet, no tools')
+assert.deepEqual(
+  computeTools(null, START, []).map((t) => t.name),
+  ['choose_companion', 'create_companion'],
+  'the title screen holds only the two ways in',
+)
 
 // Every room reachable and every room exitable. Locked exits count: anything the
 // companion cannot open, the player can attempt themselves.

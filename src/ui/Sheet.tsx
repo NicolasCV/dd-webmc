@@ -1,18 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { RegisteredTool } from '@mcp-b/webmcp-types'
 import { FAMILIES, familyOpen } from '../game/sheet'
 import { WAIT } from '../game/tools'
 import { useGame } from '../store'
 import { Icon } from './icons'
 import { supported } from '../webmcp/context'
+import { face, plate, stemOf } from './plates'
 
-const PLATES: Record<string, string> = {
-  Brakka: '/art/brakka.webp',
-  'Sister Wen': '/art/wen.webp',
-  Ilke: '/art/ilke.webp',
-}
-
-function StrikeRule() {
+export function StrikeRule() {
   return (
     <svg
       className="pointer-events-none absolute inset-x-0 top-1/2 h-2 w-full -translate-y-1/2 overflow-visible"
@@ -44,8 +39,16 @@ function Monogram({ name, className = '' }: { name: string; className?: string }
   )
 }
 
-export function Portrait({ name, className = '' }: { name: string; className?: string }) {
-  const src = PLATES[name]
+export function Portrait({
+  name,
+  act,
+  className = '',
+}: {
+  name: string
+  act?: string
+  className?: string
+}) {
+  const src = face(name, act)
   if (!src) return <Monogram name={name} className={`${className} text-3xl`} />
   // bg-vellum is the blend backdrop: .sheet > * makes a stacking context, so .plate multiply stays inside.
   return (
@@ -67,20 +70,33 @@ export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; clas
   const [open, setOpen] = useState<string | null>(null)
   const { sheet, bubbles, busy, striking, lastRoll, mechanics } = useGame()
 
+  // Without this the first time a face is worn it arrives as an empty box.
+  useEffect(() => {
+    for (const a of sheet?.speechActs ?? []) {
+      const src = plate(`${stemOf(sheet!.name)}-${a.name}`)
+      if (src) new Image().src = src
+    }
+  }, [sheet])
+
   if (!sheet) return null
   const last = bubbles[bubbles.length - 1]
   const holding = !busy && last?.who === 'companion' && last.act === WAIT
+  const said = [...bubbles].reverse().find((b) => b.who === 'companion')
   const shown = open ?? tools[0]?.name
   // striking is the only source for struck rows; the filter stops a double row while the registry catches up.
   const live = tools.filter((t) => !striking.includes(t.name))
-  const closed = Object.entries(FAMILIES).filter(([, f]) => !familyOpen(f, sheet.disposition))
-  const withheld = closed.reduce((n, [, f]) => n + f.acts.length, 0)
+  const withheld = Object.entries(FAMILIES)
+    .filter(([, f]) => !familyOpen(f, sheet.disposition))
+    .flatMap(([fam, f]) =>
+      f.acts.map((a) => ({ key: `${fam}-${a}`, act: a, needs: `needs ${f.stat} ${f.min + 1}` })),
+    )
 
   return (
     <aside className={`sheet w-full min-h-0 flex-col p-5 lg:w-[25rem] lg:shrink-0 lg:p-7 ${className}`}>
       <div className="flex items-start gap-4">
         <Portrait
           name={sheet.name}
+          act={said?.act}
           className={`size-24 transition-opacity duration-500 ${busy ? 'think' : holding ? 'opacity-55' : ''}`}
         />
         <div className="min-w-0 pt-0.5">
@@ -112,7 +128,7 @@ export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; clas
           <h3 className="mt-6 flex items-baseline justify-between border-b border-ink/25 pb-1.5 font-mono text-label tracking-label text-pencil uppercase">
             <span>Can do now</span>
             <span className="font-mono text-micro text-pencil">
-              {tools.length} live · {withheld} withheld
+              {tools.length} live · {withheld.length} withheld
             </span>
           </h3>
           <p className="mt-1 font-mono text-micro tracking-wide text-pencil">
@@ -128,6 +144,7 @@ export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; clas
               <li key={t.name} className="stamp border-b border-ink/10">
                 <button
                   type="button"
+                  aria-expanded={shown === t.name}
                   onClick={(e) => {
                     const row = e.currentTarget.parentElement
                     setOpen(shown === t.name ? '' : t.name)
@@ -166,33 +183,26 @@ export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; clas
             {live.length === 0 && striking.length === 0 && (
               <li className="py-1.5 text-body text-pencil italic">nothing registered</li>
             )}
+            {withheld.map((w, i) => (
+              <li
+                key={w.key}
+                className={`flex items-center gap-2 border-b border-ink/10 py-[5px] text-pencil ${i === 0 ? 'mt-1 border-t border-ink/25 pt-1.5' : ''}`}
+              >
+                <span aria-hidden className="text-ink/20">
+                  ▸
+                </span>
+                <span className="font-mono text-note line-through decoration-oxblood/70">
+                  {w.act}
+                </span>
+                <span className="ml-auto font-mono text-micro text-pencil">{w.needs}</span>
+              </li>
+            ))}
           </ul>
-
-          {withheld > 0 && (
-            <ul className="shrink-0 border-t border-ink/25 pt-1">
-              {closed.flatMap(([fam, f]) =>
-                f.acts.map((a) => (
-                  <li
-                    key={`${fam}-${a}`}
-                    className="flex items-center gap-2 border-b border-ink/10 py-[5px] text-pencil last:border-b-0"
-                  >
-                    <span aria-hidden className="text-ink/20">
-                      ▸
-                    </span>
-                    <span className="font-mono text-note line-through decoration-oxblood/70">{a}</span>
-                    <span className="ml-auto font-mono text-micro text-pencil">
-                      needs {f.stat} {f.min + 1}
-                    </span>
-                  </li>
-                )),
-              )}
-            </ul>
-          )}
         </>
       ) : (
         <p className="mt-6 flex-1 border-t border-ink/25 pt-3 text-body leading-relaxed text-pencil italic">
-          {sheet.name} can do {tools.length} things here, and cannot do {withheld} others. Nothing
-          on this sheet tells you which is which — asking does.
+          {sheet.name} can do {tools.length} things here, and cannot do {withheld.length} others.
+          Nothing on this sheet tells you which is which — asking does.
         </p>
       )}
 
@@ -200,7 +210,12 @@ export function Sheet({ tools, className = '' }: { tools: RegisteredTool[]; clas
         aria-live="polite"
         className="mt-4 shrink-0 border-t border-ink/25 pt-3 font-mono text-label"
       >
-        {lastRoll ? (
+        {busy ? (
+          <span>
+            <Icon of="roll" className="die-tumble mr-2 size-4 align-[-0.28em]" />
+            <span className="text-pencil">deciding</span>
+          </span>
+        ) : lastRoll ? (
           <span key={`${lastRoll.of}-${lastRoll.d20}`}>
             <Icon of="roll" className="die mr-2 size-4 align-[-0.28em]" />
             <span className="mr-2 text-pencil">{lastRoll.mine ? 'you' : sheet.name}</span>
